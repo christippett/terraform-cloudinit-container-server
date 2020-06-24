@@ -80,6 +80,104 @@ networks:
       name: web
 ```
 
+## AWS
+
+```hcl
+resource "aws_instance" "vm" {
+  ami             = "ami-0560993025898e8e8" # Amazon Linux 2
+  instance_type   = "t2.micro"
+  security_groups = ["sg-allow-everything-from-anywhere"]
+
+  tags = {
+    Name = "container-server"
+  }
+
+  user_data = module.docker-server.cloud_config
+}
+
+```
+
+## Google Cloud
+
+```hcl
+resource "google_compute_instance" "vm" {
+  name         = "container-server"
+  project      = "my-project"
+  zone         = "australia-southeast1
+  machine_type = "e2-small"
+  tags         = ["http-server", "https-server"]
+
+  metadata = {
+    user-data = module.docker-server.cloud_config
+  }
+
+  boot_disk {
+    initialize_params {
+      image = data.google_compute_image.cos.self_link
+    }
+  }
+
+  network_interface {
+    subnetwork         = "vpc"
+    subnetwork_project = "my-project"
+
+    access_config {
+      // Ephemeral IP
+    }
+  }
+}
+
+```
+
+## Azure
+
+```hcl
+resource "azurerm_linux_virtual_machine" "vm" {
+  name                = "container-server"
+  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.example.location
+  size                = "Standard_F2"
+  admin_username      = "adminuser"
+
+  custom_data = base64encode(module.docker-server.cloud_config)
+
+  network_interface_ids = [
+    azurerm_network_interface.example.id,
+  ]
+
+  admin_ssh_key {
+    username   = "adminuser"
+    public_key = file("~/.ssh/id_rsa.pub")
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "20.04-LTS"
+    version   = "latest"
+  }
+}
+
+```
+
+## DigitalOcean
+
+```hcl
+resource "digitalocean_droplet" "vm" {
+  name   = "container-server"
+  image  = "docker-18-04"
+  region = "lon1"
+  size   = "s-1vcpu-1gb"
+
+  user_data = module.docker-server.cloud_config
+}
+```
+
 ## Notes
 
 - 🏷️ If deploying a Docker Compose file, you must specify all the relevant labels to configure Traefik / Let's Encrypt.
