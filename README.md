@@ -4,16 +4,25 @@
 
 A batteries included [cloud-init](https://cloud-init.io) config to quickly and easily deploy a single Docker image or Docker Compose file to any Cloud™ virtual machine.
 
+> [**What is cloud-init?**](https://github.com/canonical/cloud-init)
+>
+> _Cloud-init is the industry standard multi-distribution method for cross-platform cloud instance initialization. It is supported across all major public cloud providers, provisioning systems for private cloud infrastructure, and bare-metal installations._
+>
+> _Cloud-init will identify the cloud it is running on during boot, read any provided metadata from the cloud and initialize the system accordingly. This may involve setting up network and storage devices to configuring SSH access key and many other aspects of a system. Later on cloud-init will also parse and process any optional user or vendor data that was passed to the instance._
+
+The module takes things one step further by bootstrapping an environment that hosts your containers with minimal fuss. All credit goes to the creators of cloud-init and Traefik for making this so easy.
+
 ## Features
 
-- ☁️ Works with:
+- ☁️ The module can be used to deploy instances on:
   - [AWS](./examples/aws-docker-image-simple/README.md)
   - [Google Cloud Platform](./examples/digitalocean-docker-image-simple/README.md)
   - [DigitalOcean](./examples/gcp-docker-image-simple/README.md)
-  - Azure _(currently untested)_
+  - Azure
+  - _(and theoretically any other platform that supports cloud-init)_
 - 🔑 Automatic SSL certificates from [Let's Encrypt](https://letsencrypt.org/)
-- 🌐 Uses [Traefik](https://containo.us/traefik/) as a reverse proxy
-- 📝 Option to add additional [cloud-init](https://cloudinit.readthedocs.io/en/latest/topics/examples.html) config(s) to customise your instances
+- 🌐 Installs [Traefik](https://containo.us/traefik/) for use as a reverse proxy (includes automatic HTTP ➡ HTTPS redirection)
+- 📝 Provides the option to supply your own [cloud-init](https://cloudinit.readthedocs.io/en/latest/topics/examples.html) config(s) to further customise your instances
 
 ## Usage
 
@@ -71,7 +80,12 @@ networks:
       name: web
 ```
 
-💡 Terraform shares the same template syntax as Docker Compose's environment variable interpolation syntax. This module passes both the `domain` and `letsencrypt_email` variables to Docker Compose to help templatise your configuration — this is especially handy when declaring Docker labels for Traefik.
+## Notes
+
+- 🏷️ If using deploying a Docker Compose file, you must specify all the relevant labels to configure Traefik and Let's Encrypt.
+- 🔗 Traefik is configured to monitor the `web` network, any services you wish to expose must belong to this network.
+- 🤓 Terraform shares the same template syntax as Docker Compose's environment variable interpolation syntax. This module passes both the `domain` and `letsencrypt_email` variables to Docker Compose to help templatise your configuration — this is especially handy when declaring Docker labels for Traefik.
+- 🌎 If enabled, Traefik's [monitoring dashboard](https://docs.traefik.io/operations/dashboard/) will be available at `https://traefik.${domain}/dashboard/`. This is currently hard-coded in the configuration, so ensure to set up the appropriate DNS record if you want to enable this feature.
 
 # Terraform
 
