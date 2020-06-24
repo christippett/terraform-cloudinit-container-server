@@ -21,7 +21,7 @@ The module takes things one step further by bootstrapping an environment that ho
   - Azure
   - _(and theoretically any other platform that supports cloud-init)_
 - 🔑 Automatic SSL certificates from [Let's Encrypt](https://letsencrypt.org/)
-- 🌐 Installs [Traefik](https://containo.us/traefik/) for use as a reverse proxy (includes automatic HTTP ➡ HTTPS redirection)
+- 🌐 Installs [Traefik](https://containo.us/traefik/) for use as a reverse proxy (includes automatic HTTP 🠆 HTTPS redirection)
 - 📝 Provides the option to supply your own [cloud-init](https://cloudinit.readthedocs.io/en/latest/topics/examples.html) config(s) to further customise your instances
 
 ## Usage
