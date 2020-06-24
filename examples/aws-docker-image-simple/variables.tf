@@ -1,15 +1,19 @@
 variable "domain" {
-  type = string
+  description = "The domain where the app will be hosted."
+  type        = string
 }
 
 variable "letsencrypt_email" {
-  type = string
+  description = "Email address used when registering certificates with Let's Encrypt."
+  type        = string
 }
 
 variable "portainer_password" {
-  type = string
+  description = "Password to log into Portainer. Must be hashed using `bcrypt`."
+  type        = string
 }
 
 variable "zone_id" {
-  type = string
+  description = "Route53 Zone ID."
+  type        = string
 }

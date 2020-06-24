@@ -4,11 +4,13 @@ variable "project" {
 }
 
 variable "region" {
-  type = string
+  description = "Google Cloud region where the instance will be created."
+  type        = string
 }
 
 variable "zone" {
-  type = string
+  description = "Google Cloud region zone where the instance will be created."
+  type        = string
 }
 
 variable "network_name" {
@@ -22,21 +24,27 @@ variable "subnetwork_name" {
 }
 
 variable "domain" {
-  type = string
-}
-
-variable "cloud_dns_zone" {
-  type = string
+  description = "The domain where the app will be hosted."
+  type        = string
 }
 
 variable "letsencrypt_email" {
-  type = string
+  description = "Email address used when registering certificates with Let's Encrypt."
+  type        = string
 }
 
+variable "cloud_dns_zone" {
+  description = "Cloud DNS zone name."
+  type        = string
+}
+
+
 variable "traefik_api_user" {
-  type = string
+  description = "Username to access Traefik dashboard (basic auth)."
+  type        = string
 }
 
 variable "traefik_api_password" {
-  type = string
+  description = "Password to access Traefik dashboard (basic auth). Must be hashed following the `htpasswd` standard."
+  type        = string
 }
