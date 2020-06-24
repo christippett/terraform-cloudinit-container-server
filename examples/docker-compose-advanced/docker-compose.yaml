@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+  hello:
+    restart: unless-stopped
+    image: nginxdemos/hello
+    ports:
+      - "80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hello.rule=Host(`${domain}`)"
+      - "traefik.http.routers.hello.entrypoints=websecure"
+      - "traefik.http.routers.hello.tls=true"
+      - "traefik.http.routers.hello.tls.certresolver=letsencrypt"
+  glances:
+    restart: unless-stopped
+    image: nicolargo/glances
+    ports:
+      - "61208"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.glances.rule=Host(`glances.${domain}`)"
+      - "traefik.http.routers.glances.entrypoints=websecure"
+      - "traefik.http.routers.glances.tls=true"
+      - "traefik.http.routers.glances.tls.certresolver=letsencrypt"
+    environment:
+      - "GLANCES_OPT=-w"
+networks:
+  default:
+    external:
+      name: web
