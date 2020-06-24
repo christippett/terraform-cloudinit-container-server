@@ -82,7 +82,7 @@ networks:
 
 ## Notes
 
-- 🏷️ If using deploying a Docker Compose file, you must specify all the relevant labels to configure Traefik and Let's Encrypt.
+- 🏷️ If deploying a Docker Compose file, you must specify all the relevant labels to configure Traefik / Let's Encrypt.
 - 🔗 Traefik is configured to monitor the `web` network, any services you wish to expose must belong to this network.
 - 🤓 Terraform shares the same template syntax as Docker Compose's environment variable interpolation syntax. This module passes both the `domain` and `letsencrypt_email` variables to Docker Compose to help templatise your configuration — this is especially handy when declaring Docker labels for Traefik.
 - 🌎 If enabled, Traefik's [monitoring dashboard](https://docs.traefik.io/operations/dashboard/) will be available at `https://traefik.${domain}/dashboard/`. This is currently hard-coded in the configuration, so ensure to set up the appropriate DNS record if you want to enable this feature.
