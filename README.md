@@ -69,6 +69,8 @@ networks:
       name: web
 ```
 
+💡 Terraform shares the same template syntax as Docker Compose's environment variable interpolation syntax. This module passes both the `domain` and `letsencrypt_email` variables to Docker Compose to help templatise your configuration — this is especially handy when declaring Docker labels for Traefik.
+
 # Terraform
 
 ## Inputs
