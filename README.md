@@ -92,7 +92,7 @@ resource "aws_instance" "vm" {
     Name = "container-server"
   }
 
-  user_data = module.docker-server.cloud_config
+  user_data = module.docker-server.cloud_config # 👈
 }
 
 ```
@@ -108,7 +108,7 @@ resource "google_compute_instance" "vm" {
   tags         = ["http-server", "https-server"]
 
   metadata = {
-    user-data = module.docker-server.cloud_config
+    user-data = module.docker-server.cloud_config # 👈
   }
 
   boot_disk {
@@ -139,7 +139,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
   size                = "Standard_F2"
   admin_username      = "adminuser"
 
-  custom_data = base64encode(module.docker-server.cloud_config)
+  custom_data = base64encode(module.docker-server.cloud_config) # 👈
 
   network_interface_ids = [
     azurerm_network_interface.example.id,
@@ -174,7 +174,7 @@ resource "digitalocean_droplet" "vm" {
   region = "lon1"
   size   = "s-1vcpu-1gb"
 
-  user_data = module.docker-server.cloud_config
+  user_data = module.docker-server.cloud_config # 👈
 }
 ```
 
