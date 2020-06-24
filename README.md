@@ -21,7 +21,8 @@ Deploy a single Docker image:
 
 ```hcl
 module "docker-server" {
-  source = "." # TODO: replace once published to Terraform registry
+  source  = "christippett/container-server/cloudinit"
+  version = "1.0.0"
 
   domain            = "example.com"
   letsencrypt_email = "me@example.com
@@ -37,7 +38,8 @@ Deploy a Docker Compose file:
 
 ```hcl
 module "docker-server" {
-  source = "." # TODO: replace once published to Terraform registry
+  source  = "christippett/container-server/cloudinit"
+  version = "1.0.0"
 
   domain            = "example.com"
   letsencrypt_email = "me@example.com
