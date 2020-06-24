@@ -165,7 +165,7 @@ runcmd:
   - mkdir -p /run/app/.bin
   - mkdir -p /run/app/.tmp
   - |
-    if [ ! $(docker network list -q --filter=name=web) ]; then
+    if [ ! "$(docker network list -q --filter=name=web)" ]; then
       docker network create web
     fi
   - |
