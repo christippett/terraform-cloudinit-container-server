@@ -12,21 +12,44 @@ A batteries included [cloud-init](https://cloud-init.io) config to quickly and e
 
 The module takes things one step further by bootstrapping an environment that hosts your containers with minimal fuss. All credit goes to the creators of cloud-init and Traefik for making this so easy.
 
-## Features
+# Features
 
-- ☁️ The module can be used to deploy instances on:
-  - [AWS](./examples/aws-docker-image-simple/README.md)
-  - [Google Cloud Platform](./examples/digitalocean-docker-image-simple/README.md)
-  - [DigitalOcean](./examples/gcp-docker-image-simple/README.md)
+- ☁️ This module is compatible with most major cloud providers:
+  - AWS ([see example](./examples/aws-docker-image-simple/))
+  - Google Cloud Platform ([see example](./examples/digitalocean-docker-image-simple/))
+  - DigitalOcean ([see example](./examples/gcp-docker-image-simple/))
   - Azure
   - _(and theoretically any other platform that supports cloud-init)_
-- 🔑 Automatic SSL certificates from [Let's Encrypt](https://letsencrypt.org/)
-- 🌐 Installs [Traefik](https://containo.us/traefik/) for use as a reverse proxy (includes automatic HTTP 🠆 HTTPS redirection)
-- 📝 Provides the option to supply your own [cloud-init](https://cloudinit.readthedocs.io/en/latest/topics/examples.html) config(s) to further customise your instances
+- 🌐 Installs and configures **Traefik** under-the-hood as the reverse proxy for your container(s)
+- 🔑 Generates and renews SSL/TLS certificates automatically from **Let's Encrypt**.
+- 📝 Gives you the option to provide supplementary **cloud-init** config file(s) to further customise the setup of your instances ([example](./examples/gcp-docker-compose-advanced/main.tf)).
 
-## Usage
+# Requirements
 
-Deploy a single Docker image:
+The only two dependencies are for Docker and `systemd` to be installed on whatever virtual machine you're deploying to.
+
+The following operating systems have been test successfully:
+
+- [Google's Container Optimized OS](https://cloud.google.com/container-optimized-os)
+- [Amazon Linux 2](https://aws.amazon.com/amazon-linux-2/)
+- [Ubuntu 18.04 (via DigitalOcean's Marketplace)](https://marketplace.digitalocean.com/apps/docker)
+
+# Usage
+
+The output of this module is the content of a cloud-init configuration file with everything needed to setup a VM and run your container(s). Use this as input into one of either `user_data` (AWS / DigitalOcean), `metadata.user-data` (Google Cloud) or `custom_data` (Azure) when creating a virtual machine.
+
+Some providers expect this value to be base64 encoded, refer to the Terraform documentation below for details relevant to your cloud provider of choice:
+
+- [AWS Documentation](https://www.terraform.io/docs/providers/aws/r/instance.html#user_data)
+- [Google Cloud Documentation](https://www.terraform.io/docs/providers/google/r/compute_instance.html#metadata)
+- [Azure Documentation](https://www.terraform.io/docs/providers/azurerm/r/linux_virtual_machine.html#custom_data)
+- [DigitalOcean Documentation](https://www.terraform.io/docs/providers/do/r/droplet.html#user_data)
+
+## Module Definition — Single Container
+
+The easiest way to get a container up and running is to specify an `image` and the `ports` to expose as part of the `container` input variable. The `container` variable can accept any attribute found under Docker Compose's `service` configuration ([docs](https://docs.docker.com/compose/compose-file/#service-configuration-reference)), but in most cases `image` and `ports` are all that's need to get started.
+
+Let's Encrypt is enabled by default, so we also provide a `domain` and `letsencrypt_email`.
 
 ```hcl
 module "docker-server" {
@@ -43,7 +66,9 @@ module "docker-server" {
 }
 ```
 
-Deploy a Docker Compose file:
+## Module Definition — Docker Compose
+
+Choosing to use a Docker Compose file (`docker-compose.yaml`) provides greater flexibility with regards to how your containers are deployed, but requires you to manually configure your services to work with Traefik.
 
 ```hcl
 module "docker-server" {
@@ -56,6 +81,10 @@ module "docker-server" {
   compose_file = file("docker-compose.yaml")
 }
 ```
+
+Traefik is a wonderful tool with a lot of functionality and configuration options, however it can be a bit intimidating to set up if you're not familiar with it. The four labels shown in the `docker-compose.yaml` file below are all you need to get a container up and running. These labels need to be added for every service defined in your Docker Compose file that you want to make available externally.
+
+For more advanced options, refer to the official [Traefik documentation](https://docs.traefik.io/).
 
 ```yaml
 # docker-compose.yaml
@@ -79,6 +108,15 @@ networks:
     external:
       name: web
 ```
+
+### Note:
+
+- 🔗 Traefik connects to services over the `web` Docker network by default — this network must be added for all service(s) you want exposed.
+- 🔒 Let's Encrypt is configured using the `letsencrypt` certificate resolver from Traefik. Refer to the example `docker-compose.yaml` file above for the labels used to enable and configure this feature.
+- 📋 Terraform shares the same variable interpolation syntax as Docker Compose's environment variables. We leverage this fact by parsing `docker-compose.yaml` as a Terraform template, providing both `${domain}` and `${letsencrypt_email}` as template variables. These can be used to parameterise your Docker Compose file without impacting its compatibility with other applications (such as running `docker-compose` locally).
+- 📊 The module provides an option for enabling Traefik's [monitoring dashboard](https://docs.traefik.io/operations/dashboard/) and API. When enabled, the dashboard is accessible from `https://traefik.${domain}/dashboard/` and the API from `https://traefik.${domain}/api/`. The **traefik** sub-domain is currently hard-coded and cannot be changed. Don't forget to create the corresponding DNS record for the dashboard and API to be accessible.
+
+# Integration w/ Cloud Providers
 
 ## AWS
 
@@ -178,14 +216,7 @@ resource "digitalocean_droplet" "vm" {
 }
 ```
 
-## Notes
-
-- 🏷️ If deploying a Docker Compose file, you must specify all the relevant labels to configure Traefik / Let's Encrypt.
-- 🔗 Traefik is configured to monitor the `web` network, any services you wish to expose must belong to this network.
-- 🤓 Terraform shares the same template syntax as Docker Compose's environment variable interpolation syntax. This module passes both the `domain` and `letsencrypt_email` variables to Docker Compose to help templatise your configuration — this is especially handy when declaring Docker labels for Traefik.
-- 🌎 If enabled, Traefik's [monitoring dashboard](https://docs.traefik.io/operations/dashboard/) will be available at `https://traefik.${domain}/dashboard/`. This is currently hard-coded in the configuration, so ensure to set up the appropriate DNS record if you want to enable this feature.
-
-# Terraform
+# Terraform Documentation
 
 ## Inputs
 
