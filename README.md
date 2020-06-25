@@ -23,7 +23,7 @@ The module takes things one step further by bootstrapping an environment that ho
       _e2.micro • 0.25vCPU/1GB • 10GB HDD_
   - **DigitalOcean** ([see example](./examples/gcp-docker-image-simple/))
     - Cost: USD\$6.00/month<br />
-      _Standard Droplet • 1vCPU/1GB • 10 HD_
+      _Standard Droplet • 1vCPU/1GB • 10 HDD_
   - **Azure**
     - Cost: USD\$14.73/month<br />
       _A0 • 1vCPU/0.75GB • 32GB HDD_
