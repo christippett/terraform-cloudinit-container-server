@@ -26,7 +26,7 @@ The module takes things one step further by bootstrapping an environment that ho
       _Standard Droplet • 1vCPU/1GB • 10 HD_
   - **Azure**
     - Cost: USD\$14.73/month<br />
-      _A0 • 1vCPU/0.75GB • 32GB HDD)_
+      _A0 • 1vCPU/0.75GB • 32GB HDD_
   - _(and theoretically any other platform that supports cloud-init)_
 - 🌐 Installs and configures **Traefik** under-the-hood as the reverse proxy for your container(s)
 - 🔑 Generates and renews SSL/TLS certificates automatically from **Let's Encrypt**.
