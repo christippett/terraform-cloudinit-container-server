@@ -65,7 +65,7 @@ module "docker-server" {
   version = "1.0.0"
 
   domain            = "example.com"
-  letsencrypt_email = "me@example.com
+  letsencrypt_email = "me@example.com"
 
   container = {
     image   = "nginxdemos/hello"
@@ -84,7 +84,7 @@ module "docker-server" {
   version = "1.0.0"
 
   domain            = "example.com"
-  letsencrypt_email = "me@example.com
+  letsencrypt_email = "me@example.com"
 
   compose_file = file("docker-compose.yaml")
 }
