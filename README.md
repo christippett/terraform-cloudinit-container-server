@@ -1,4 +1,4 @@
-# Simple Container Server w/ Terraform & cloud-init
+# Simple Container Server w/ Terraform & Cloud-Init
 
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/christippett/terraform-cloudinit-container-server?label=Version)](./CHANGELOG.md) [![Terraform Registry](https://img.shields.io/badge/Terraform-Registry-623CE4)](https://registry.terraform.io/modules/christippett/container-server/cloudinit/)
 
