@@ -29,14 +29,14 @@ The module takes things one step further by bootstrapping an environment that ho
       _A0 • 1vCPU/0.75GB • 32GB HDD_
   - _(and theoretically any other platform that supports cloud-init)_
 - 🌐 Installs and configures **Traefik** under-the-hood as the reverse proxy for your container(s)
-- 🔑 Generates and renews SSL/TLS certificates automatically from **Let's Encrypt**.
+- 🔑 Generates and renews SSL/TLS certificates automatically using **Let's Encrypt**.
 - 📝 Gives you the option to provide supplementary **cloud-init** config file(s) to further customise the setup of your instances ([example](./examples/gcp-docker-compose-advanced/main.tf)).
 
 # Requirements
 
 The only two dependencies are for Docker and `systemd` to be installed on whatever virtual machine you're deploying to.
 
-The following operating systems have been test successfully:
+The following operating systems have been tested successfully:
 
 - [Google's Container Optimized OS](https://cloud.google.com/container-optimized-os)
 - [Amazon Linux 2](https://aws.amazon.com/amazon-linux-2/)
