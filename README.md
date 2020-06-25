@@ -16,13 +16,17 @@ The module takes things one step further by bootstrapping an environment that ho
 
 - ☁️ This module is compatible with most major cloud providers:
   - **AWS** ([see example](./examples/aws-docker-image-simple/))
-    - Cost: USD\$4.76/month <span style="font-size: 0.75em; opacity: 0.5; margin-left: 0.5rem">_t3a.micro • 2vCPU/1GB • 10GB HDD_</span>
+    - Cost: USD\$4.76/month<br />
+      _t3a.micro • 2vCPU/1GB • 10GB HDD_
   - **Google Cloud Platform** ([see example](./examples/digitalocean-docker-image-simple/))
-    - Cost: USD\$6.11/month <span style="font-size: 0.75em; opacity: 0.5; margin-left: 0.5rem">_e2.micro • 0.25vCPU/1GB • 10GB HDD_</span>
+    - Cost: USD\$6.11/month<br />
+      _e2.micro • 0.25vCPU/1GB • 10GB HDD_
   - **DigitalOcean** ([see example](./examples/gcp-docker-image-simple/))
-    - Cost: USD\$6.00/month <span style="font-size: 0.75em; opacity: 0.5; margin-left: 0.5rem">_Standard Droplet • 1vCPU/1GB • 10 HD_</span>
+    - Cost: USD\$6.00/month<br />
+      _Standard Droplet • 1vCPU/1GB • 10 HD_
   - **Azure**
-    - Cost: USD\$14.73/month <span style="font-size: 0.75em; opacity: 0.5; margin-left: 0.5rem">_A0 • 1vCPU/0.75GB • 32GB HDD)_</span>
+    - Cost: USD\$14.73/month<br />
+      _A0 • 1vCPU/0.75GB • 32GB HDD)_
   - _(and theoretically any other platform that supports cloud-init)_
 - 🌐 Installs and configures **Traefik** under-the-hood as the reverse proxy for your container(s)
 - 🔑 Generates and renews SSL/TLS certificates automatically from **Let's Encrypt**.
