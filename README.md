@@ -18,7 +18,7 @@ The module takes things one step further by bootstrapping an environment that ho
   - **AWS** ([see example](./examples/aws-docker-image-simple/))
   - **Google Cloud Platform** ([see example](./examples/digitalocean-docker-image-simple/))
   - **DigitalOcean** ([see example](./examples/gcp-docker-image-simple/))
-  - **Azure** ([TBC](https://github.com/christippett/terraform-cloudinit-container-server/issues/2))
+  - **Azure** ([see example](./examples/azure-docker-image-simple))
   - _(and theoretically any other platform that supports cloud-init)_
 - 🌐 Installs and configures **Traefik** under-the-hood as the reverse proxy for your container(s)
 - 🔑 Generates and renews SSL/TLS certificates automatically using **Let's Encrypt**.
@@ -31,16 +31,16 @@ Even the most basic and cheapest of VMs are capable of running _a lot_ of contai
 Below are the going rates for a cheap VM running on each of the major cloud providers. These instances are more than capable of running dozens of containers, especially if they're not receiving much traffic.
 
 - **AWS**
-  - Cost: **USD\$4.76/month**<br />
+  - **Cost:** USD\$4.76/month<br />
     _t3a.micro • 2vCPU/1GB • 10GB HDD_
 - **Google Cloud Platform**
-  - Cost: **USD\$6.11/month**<br />
+  - **Cost:** USD\$6.11/month**<br />
     _e2.micro • 0.25vCPU/1GB • 10GB HDD_
 - **DigitalOcean**
-  - Cost: **USD\$6.00/month**<br />
+  - **Cost:** USD\$6.00/month**<br />
     _Standard Droplet • 1vCPU/1GB • 10 HDD_
 - **Azure**
-  - Cost: **USD\$14.73/month**<br />
+  - **Cost:** USD\$14.73/month**<br />
     _A0 • 1vCPU/0.75GB • 32GB HDD_
 
 # Requirements
