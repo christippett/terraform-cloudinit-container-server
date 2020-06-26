@@ -2,7 +2,7 @@
 
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/christippett/terraform-cloudinit-container-server?label=Version)](./CHANGELOG.md) [![Terraform Registry](https://img.shields.io/badge/Terraform-Registry-623CE4)](https://registry.terraform.io/modules/christippett/container-server/cloudinit/)
 
-A batteries included [cloud-init](https://cloud-init.io) config to quickly and easily deploy a single Docker image or Docker Compose file to any Cloud™ virtual machine.
+A batteries included [cloud-init](https://cloud-init.io) config to quickly and easily deploy a single Docker image or Docker Compose file to any Cloud™ virtual machine. No external dependencies, no fancy framework, just good ol' fashioned `docker` and `systemd`.
 
 > [**What is cloud-init?**](https://github.com/canonical/cloud-init)
 >
@@ -16,25 +16,36 @@ The module takes things one step further by bootstrapping an environment that ho
 
 - ☁️ This module is compatible with most major cloud providers:
   - **AWS** ([see example](./examples/aws-docker-image-simple/))
-    - Cost: USD\$4.76/month<br />
-      _t3a.micro • 2vCPU/1GB • 10GB HDD_
   - **Google Cloud Platform** ([see example](./examples/digitalocean-docker-image-simple/))
-    - Cost: USD\$6.11/month<br />
-      _e2.micro • 0.25vCPU/1GB • 10GB HDD_
   - **DigitalOcean** ([see example](./examples/gcp-docker-image-simple/))
-    - Cost: USD\$6.00/month<br />
-      _Standard Droplet • 1vCPU/1GB • 10 HDD_
-  - **Azure**
-    - Cost: USD\$14.73/month<br />
-      _A0 • 1vCPU/0.75GB • 32GB HDD_
+  - **Azure** ([TBC](https://github.com/christippett/terraform-cloudinit-container-server/issues/2))
   - _(and theoretically any other platform that supports cloud-init)_
 - 🌐 Installs and configures **Traefik** under-the-hood as the reverse proxy for your container(s)
 - 🔑 Generates and renews SSL/TLS certificates automatically using **Let's Encrypt**.
-- 📝 Gives you the option to provide supplementary **cloud-init** config file(s) to further customise the setup of your instances ([example](./examples/gcp-docker-compose-advanced/main.tf)).
+- 📝 Gives you the option to provide supplementary **cloud-init** config file(s) to further customise the setup of your instances ([see example](./examples/gcp-docker-compose-advanced/main.tf)).
+
+# Why?
+
+Even the most basic and cheapest of VMs are capable of running _a lot_ of containers. As fantastic as the cloud's PaaS and serverless offerings are, it's sometimes easier to orchestrate several containers without having to mess with IAM, networking, service inter-dependencies etc. Having all your containers colocated on the same machine using Docker Compose can be a more manageable solution. The use-case for this module is for small hobby projects, POCs and other experimental workloads.
+
+Below are the going rates for a cheap VM running on each of the major cloud providers. These instances are more than capable of running dozens of containers, especially if they're not receiving much traffic.
+
+- **AWS**
+  - Cost: **USD\$4.76/month**<br />
+    _t3a.micro • 2vCPU/1GB • 10GB HDD_
+- **Google Cloud Platform**
+  - Cost: **USD\$6.11/month**<br />
+    _e2.micro • 0.25vCPU/1GB • 10GB HDD_
+- **DigitalOcean**
+  - Cost: **USD\$6.00/month**<br />
+    _Standard Droplet • 1vCPU/1GB • 10 HDD_
+- **Azure**
+  - Cost: **USD\$14.73/month**<br />
+    _A0 • 1vCPU/0.75GB • 32GB HDD_
 
 # Requirements
 
-The only two dependencies are for Docker and `systemd` to be installed on whatever virtual machine you're deploying to.
+The only two dependencies are for `docker` and `systemd` to be available on whatever virtual machine you're deploying to.
 
 The following operating systems have been tested successfully:
 
