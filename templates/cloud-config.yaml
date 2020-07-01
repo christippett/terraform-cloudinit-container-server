@@ -122,7 +122,6 @@ write_files:
       WorkingDirectory=/run/app
       Environment=HOME=/run/app
       PassEnvironment=HOME
-      ExecStartPre=-/usr/bin/docker-credential-gcr configure-docker
       ExecStartPre=-/run/app/.bin/docker-compose rm -f
       ExecStart=/run/app/.bin/docker-compose up
       ExecStop=/run/app/.bin/docker-compose stop -t 15
@@ -175,5 +174,5 @@ runcmd:
     fi
   - systemctl daemon-reload
   - systemctl restart docker
-  - systemctl enable traefik app app-watcher
+  - systemctl enable traefik app-watcher
   - systemctl start traefik app app-watcher.path
