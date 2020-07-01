@@ -73,7 +73,7 @@ Let's Encrypt is enabled by default, so we also provide a `domain` and `letsencr
 ```hcl
 module "docker-server" {
   source  = "christippett/container-server/cloudinit"
-  version = "1.0.0"
+  version = "~> 1.0"
 
   domain            = "example.com"
   letsencrypt_email = "me@example.com"
@@ -92,7 +92,7 @@ Choosing to use a Docker Compose file (`docker-compose.yaml`) provides greater f
 ```hcl
 module "docker-server" {
   source  = "christippett/container-server/cloudinit"
-  version = "1.0.0"
+  version = "~> 1.0"
 
   domain            = "example.com"
   letsencrypt_email = "me@example.com"
