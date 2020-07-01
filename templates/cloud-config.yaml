@@ -5,6 +5,12 @@ write_files:
     permissions: 0644
     content: ${docker_compose}
     encoding: b64
+  %{~ for f in files ~}
+  - path: /run/app/${f.filename}
+    permissions: 0644
+    content: ${f.content}
+    encoding: b64
+  %{~ endfor ~}
   - path: /etc/docker/daemon.json
     permissions: 0644
     content: |

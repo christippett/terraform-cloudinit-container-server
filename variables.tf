@@ -11,6 +11,12 @@ variable "compose_file" {
   default     = null
 }
 
+variable "files" {
+  description = "A list of files to upload to the server. Content must be base64 encoded. Files are available under the `/run/app/` directory."
+  type        = list(object({ filename : string, content : string }))
+  default     = []
+}
+
 variable "container" {
   description = "The container definition used to deploy a Docker image to the server. Follows the same schema as a Docker Compose service. Either `container` or `compose_file` must be specified."
   type        = any

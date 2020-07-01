@@ -34,6 +34,7 @@ data "cloudinit_config" "config" {
         traefik_api_password       = var.traefik_api_password
         docker_log_driver          = var.docker_log_driver
         docker_log_opts            = jsonencode(var.docker_log_opts)
+        files                      = [for f in var.files : f if can(base64decode(f.content))]
       }
     )
   }
