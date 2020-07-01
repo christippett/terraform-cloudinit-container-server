@@ -34,13 +34,13 @@ Below are the going rates for a cheap VM running on each of the major cloud prov
   - **Cost:** USD\$4.76/month<br />
     _t3a.micro • 2vCPU/1GB • 10GB HDD_
 - **Google Cloud Platform**
-  - **Cost:** USD\$6.11/month**<br />
+  - **Cost:** USD\$6.11/month\*\*<br />
     _e2.micro • 0.25vCPU/1GB • 10GB HDD_
 - **DigitalOcean**
-  - **Cost:** USD\$6.00/month**<br />
+  - **Cost:** USD\$6.00/month\*\*<br />
     _Standard Droplet • 1vCPU/1GB • 10 HDD_
 - **Azure**
-  - **Cost:** USD\$14.73/month**<br />
+  - **Cost:** USD\$14.73/month\*\*<br />
     _A0 • 1vCPU/0.75GB • 32GB HDD_
 
 # Requirements
