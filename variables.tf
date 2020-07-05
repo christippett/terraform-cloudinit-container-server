@@ -41,7 +41,7 @@ variable "cloudinit_part" {
 }
 
 variable "enable_webhook" {
-  description = "Whether the enable the webhook endpoint on the server, allowing updates to be made independent of Terraform."
+  description = "Flag whether to enable the webhook endpoint on the server, allowing updates to be made independent of Terraform."
   type        = bool
   default     = false
 }
