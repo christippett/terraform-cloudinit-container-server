@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+  app:
+    restart: unless-stopped
+    image: ${IMAGE:-containous/whoami:latest}
+    ports:
+      - "80"
+    labels:
+      - "traefik.enable=${TRAEFIK_ENABLE:-true}"
+      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+networks:
+  default:
+    external:
+      name: web
