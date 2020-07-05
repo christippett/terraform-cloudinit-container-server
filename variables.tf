@@ -29,7 +29,7 @@ variable "env" {
 }
 
 variable "container" {
-  description = "The container definition used to deploy a Docker image to the server. Follows the same schema as a Docker Compose service. Either `container` or `compose_file` must be specified."
+  description = "The container definition used to deploy a Docker image to the server. Follows the same schema as a Docker Compose service."
   type        = any
   default     = {}
 }
