@@ -27,8 +27,3 @@ variable "cloud_dns_zone" {
   description = "Cloud DNS zone name."
   type        = string
 }
-
-variable "portainer_password" {
-  description = "Password to log into Portainer. Must be hashed using `bcrypt`."
-  type        = string
-}

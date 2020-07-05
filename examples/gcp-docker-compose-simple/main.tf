@@ -1,4 +1,4 @@
-module "container" {
+module "container-server" {
   source = "../.."
 
   domain = "app.${var.domain}"
@@ -67,7 +67,7 @@ resource "google_compute_instance" "app" {
   tags         = ["ssh", "http-server", "https-server"]
 
   metadata = {
-    user-data = module.container.cloud_config
+    user-data = module.container-server.cloud_config
   }
 
   boot_disk {

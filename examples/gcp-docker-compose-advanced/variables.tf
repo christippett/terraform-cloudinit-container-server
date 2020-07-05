@@ -8,17 +8,7 @@ variable "region" {
   type        = string
 }
 
-variable "zone" {
-  description = "Google Cloud region zone where the instance will be created."
-  type        = string
-}
-
-variable "network_name" {
-  description = "The name of the network where the instance will be created."
-  type        = string
-}
-
-variable "subnetwork_name" {
+variable "subnet_name" {
   description = "The name of the subnet where the instance will be created."
   type        = string
 }
@@ -28,7 +18,7 @@ variable "domain" {
   type        = string
 }
 
-variable "letsencrypt_email" {
+variable "email" {
   description = "Email address used when registering certificates with Let's Encrypt."
   type        = string
 }
@@ -38,13 +28,7 @@ variable "cloud_dns_zone" {
   type        = string
 }
 
-
-variable "traefik_api_user" {
-  description = "Username to access Traefik dashboard (basic auth)."
-  type        = string
-}
-
-variable "traefik_api_password" {
-  description = "Password to access Traefik dashboard (basic auth). Must be hashed following the `htpasswd` standard."
+variable "portainer_password" {
+  description = "Password to log into Portainer. Must be hashed using `bcrypt`."
   type        = string
 }
