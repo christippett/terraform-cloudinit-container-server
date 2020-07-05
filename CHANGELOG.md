@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0-alpha.0](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.1.0...v1.2.0-alpha.0) (2020-07-05)
+
+
+### Features
+
+* Add webhook to enable updates independent of Terraform ([9ecbe8e](https://github.com/christippett/terraform-cloudinit-container-server/commit/9ecbe8ed54a09e4b770eedac3e211d019103b726))
+
 ## [1.1.0](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.0.3...v1.1.0) (2020-07-05)
 
 ### ⚠ BREAKING CHANGES
