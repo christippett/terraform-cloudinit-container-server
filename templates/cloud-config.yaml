@@ -1,178 +1,47 @@
 #cloud-config
 
 write_files:
-  - path: /run/app/docker-compose.yml
+  %{~ for f in files ~}
+  - path: /run/app/${f.filename}
     permissions: 0644
-    content: ${docker_compose}
+    content: ${f.content}
     encoding: b64
-  - path: /etc/docker/daemon.json
-    permissions: 0644
-    content: |
-      {
-        "live-restore": true,
-        "storage-driver": "overlay2",
-        "mtu": 1460,
-        "log-driver": "${docker_log_driver}",
-        "log-opts": ${docker_log_opts}
-      }
-  - path: /run/app/.traefik/traefik.toml
-    permissions: 0644
-    content: |
-      [providers]
-        [providers.file]
-          filename = "/etc/traefik/http.toml"
-        [providers.docker]
-          network = "web"
-          exposedByDefault = false
-      [log]
-        level = "INFO"
-      [accessLog]
-        [accessLog.filters]
-          statusCodes = ["400-599"]
-          retryAttempts = true
-          minDuration = "100ms"
-      [entryPoints]
-        [entryPoints.web]
-          address = ":80"
-        [entryPoints.websecure]
-          address = ":443"
-      %{~ if enable_letsencrypt ~}
-        [entryPoints.websecure.http.tls]
-          certResolver = "letsencrypt"
-      [certificatesResolvers.letsencrypt.acme]
-        email = "${letsencrypt_email}"
-        storage = "/etc/traefik/acme.json"
-        %{~ if letsencrypt_staging_server ~}
-        caServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
-        %{~ endif ~}
-        [certificatesResolvers.letsencrypt.acme.httpChallenge]
-          entryPoint = "web"
-      %{~ endif ~}
-      %{~ if enable_traefik_api ~}
-      [api]
-        dashboard = true
-      %{~ endif ~}
-
-  - path: /run/app/.traefik/http.toml
-    permissions: 0644
-    content: |
-      [http]
-        [http.services]
-          [http.services.dummy.LoadBalancer]
-            [[http.services.dummy.LoadBalancer.servers]]
-              url = ""
-        [http.middlewares]
-          [http.middlewares.https-redirect.redirectScheme]
-            scheme = "https"
-          %{~ if enable_traefik_api ~}
-          [http.middlewares.admin.basicAuth]
-            users = ["${traefik_api_user}:${traefik_api_password}"]
-          %{~ endif ~}
-        [http.routers]
-          [http.routers.http-catchall]
-            entrypoints = ["web"]
-            service = "dummy"
-            rule = "HostRegexp(`{host:.+}`)"
-            middlewares = ["https-redirect"]
-          %{~ if enable_traefik_api ~}
-          [http.routers.traefik]
-            entrypoints = ["websecure"]
-            rule = "Host(`traefik.${domain}`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))"
-            service = "api@internal"
-            middlewares = ["admin"]
-            %{~ if enable_letsencrypt ~}
-            [http.routers.traefik.tls]
-              certresolver = "letsencrypt"
-            %{~ endif ~}
-          %{~ endif ~}
-
-  - path: /etc/systemd/system/traefik.service
+  %{~ endfor ~}
+  %{~ for c in docker_compose_files ~}
+  - path: /etc/systemd/system/${coalesce(c.name, "app")}.service
     permissions: 0644
     content: |
       [Unit]
-      Description=Run Traefik
+      Description=Docker Compose Service (${coalesce(c.name, "app")})
       Requires=docker.service
       After=docker.service
 
       [Service]
       Type=simple
-      ExecStart=/usr/bin/docker run --name traefik --network web \
-        -v /var/run/docker.sock:/var/run/docker.sock:ro \
-        -v /run/app/.traefik:/etc/traefik/ \
-        -p 80:80 \
-        -p 443:443 \
-        traefik:${traefik_version}
-      ExecStartPre=-/usr/bin/docker rm -f traefik
-      ExecStop=/usr/bin/docker stop -t 15 traefik
-      ExecStopPost=-/usr/bin/docker rm -f traefik
-
-      [Install]
-      WantedBy=multi-user.target
-
-  - path: /etc/systemd/system/app.service
-    permissions: 0644
-    content: |
-      [Unit]
-      Description=Run application
-      Requires=docker.service traefik.service
-      After=docker.service traefik.service
-
-      [Service]
-      Type=simple
       WorkingDirectory=/run/app
-      Environment=HOME=/run/app
-      PassEnvironment=HOME
-      ExecStartPre=-/run/app/.bin/docker-compose rm -f
-      ExecStart=/run/app/.bin/docker-compose up
-      ExecStop=/run/app/.bin/docker-compose stop -t 15
-      ExecStopPost=-/run/app/.bin/docker-compose rm -f
+      Environment=HOME=/run/app TMP=/run/app/.tmp
+      PassEnvironment=HOME TMP
+      ExecStartPre=-/run/app/.bin/docker-compose -f ${c.filename} rm -f
+      ExecStart=/run/app/.bin/docker-compose -f ${c.filename} up
+      ExecStop=/run/app/.bin/docker-compose -f ${c.filename} stop -t 15
+      ExecStopPost=-/run/app/.bin/docker-compose -f ${c.filename} rm -f
 
       [Install]
       WantedBy=multi-user.target
 
-  - path: /etc/systemd/system/app-watcher.service
-    permissions: 0644
-    content: |
-      [Unit]
-      Description=Restart application
-
-      [Service]
-      Type=oneshot
-      ExecStart=/usr/bin/systemctl restart app.service
-      StartLimitIntervalSec=10
-      StartLimitBurst=1
-
-      [Install]
-      WantedBy=multi-user.target
-
-  - path: /etc/systemd/system/app-watcher.path
-    permissions: 0644
-    content: |
-      [Unit]
-      Description=Watch for application changes
-      After=app.service
-
-      [Path]
-      PathChanged=/run/app/docker-compose.yml
-      PathExists=/run/app/docker-compose.yml
-      PathExists=/run/app/.bin/docker-compose
-
-      [Install]
-      WantedBy=multi-user.target
+  %{~ endfor ~}
 
 runcmd:
+  - set -x
   - mkdir -p /run/app/.bin
   - mkdir -p /run/app/.tmp
-  - |
-    if [ ! "$(docker network list -q --filter=name=web)" ]; then
-      docker network create web
-    fi
+  - "[ $(docker network list -q --filter=name=web) ] || docker network create web"
   - |
     if [ ! -f /run/app/.bin/docker-compose ]; then
-      curl -L --fail https://github.com/docker/compose/releases/download/1.26.0/run.sh -o /run/app/.bin/docker-compose
+      curl --connect-timeout 20 --retry 3 --retry-delay 0 --retry-max-time 90 \
+        -LJ "https://github.com/docker/compose/releases/download/1.26.1/docker-compose-$(uname -s)-$(uname -m)" \
+        -o /run/app/.bin/docker-compose
       chmod +x /run/app/.bin/docker-compose
     fi
   - systemctl daemon-reload
-  - systemctl restart docker
-  - systemctl enable traefik app-watcher
-  - systemctl start traefik app app-watcher.path
+  - systemctl enable --now traefik app

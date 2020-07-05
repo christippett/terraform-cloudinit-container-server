@@ -1,39 +1,31 @@
-module "docker-server" {
+module "container-server" {
   source = "../.."
 
-  domain            = "portainer.${var.domain}"
-  letsencrypt_email = var.letsencrypt_email
+  domain = "app.${var.domain}"
+  email  = var.email
 
   container = {
-    image   = "portainer/portainer"
-    command = "--admin-password ${replace(var.portainer_password, "$", "$$")}"
-    ports   = ["9000"]
-    volumes = ["/var/run/docker.sock:/var/run/docker.sock:ro"]
+    image = "nginxdemos/hello"
   }
 }
 
-resource "azurerm_resource_group" "example" {
+resource "azurerm_resource_group" "app" {
   name     = var.base_resource_name
   location = var.location
 }
 
-resource "azurerm_linux_virtual_machine" "vm" {
+resource "azurerm_linux_virtual_machine" "app" {
   name                = "container-server"
-  resource_group_name = azurerm_resource_group.example.name
-  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.app.name
+  location            = azurerm_resource_group.app.location
   size                = "Standard_F2"
   admin_username      = "adminuser"
 
-  custom_data = base64encode(module.docker-server.cloud_config) # 👈
+  custom_data = base64encode(module.container-server.cloud_config)
 
   network_interface_ids = [
-    azurerm_network_interface.example.id,
+    azurerm_network_interface.app.id,
   ]
-
-  admin_ssh_key {
-    username   = "adminuser"
-    public_key = file("~/.ssh/id_rsa.pub")
-  }
 
   os_disk {
     caching              = "ReadWrite"
@@ -46,43 +38,39 @@ resource "azurerm_linux_virtual_machine" "vm" {
     sku       = "18.04-LTS"
     version   = "latest"
   }
-
-  tags = {
-    Name = "portainer"
-  }
 }
 
-resource "azurerm_network_interface" "example" {
+resource "azurerm_network_interface" "app" {
   name                = "${var.base_resource_name}-nic"
   location            = var.location
-  resource_group_name = azurerm_resource_group.example.name
+  resource_group_name = azurerm_resource_group.app.name
 
   ip_configuration {
     name                          = var.base_resource_name
-    subnet_id                     = azurerm_subnet.example.id
+    subnet_id                     = azurerm_subnet.app.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.vmpubip.id
+    public_ip_address_id          = azurerm_public_ip.app.id
   }
 }
 
-resource "azurerm_public_ip" "vmpubip" {
+resource "azurerm_public_ip" "app" {
   name                = "${var.base_resource_name}-vmpubip"
   location            = var.location
-  resource_group_name = azurerm_resource_group.example.name
+  resource_group_name = azurerm_resource_group.app.name
   allocation_method   = "Static"
   domain_name_label   = var.base_resource_name
 }
 
-resource "azurerm_virtual_network" "example" {
+resource "azurerm_virtual_network" "app" {
   name                = var.base_resource_name
   location            = var.location
-  resource_group_name = azurerm_resource_group.example.name
+  resource_group_name = azurerm_resource_group.app.name
   address_space       = ["10.0.0.0/8"]
 }
 
-resource "azurerm_subnet" "example" {
+resource "azurerm_subnet" "app" {
   name                 = var.base_resource_name
-  resource_group_name  = azurerm_resource_group.example.name
-  virtual_network_name = azurerm_virtual_network.example.name
-  address_prefix       = cidrsubnet(azurerm_virtual_network.example.address_space[0], 16, 1)
+  resource_group_name  = azurerm_resource_group.app.name
+  virtual_network_name = azurerm_virtual_network.app.name
+  address_prefix       = cidrsubnet(azurerm_virtual_network.app.address_space[0], 16, 1)
 }

@@ -1,50 +1,47 @@
-module "docker-server" {
+module "container-server" {
   source = "../.."
 
-  domain            = "portainer.${var.domain}"
-  letsencrypt_email = var.letsencrypt_email
+  domain = "app.${var.domain}"
+  email  = var.email
 
   container = {
-    image   = "portainer/portainer"
-    command = "--admin-password ${replace(var.portainer_password, "$", "$$")}"
-    ports   = ["9000"]
-    volumes = ["/var/run/docker.sock:/var/run/docker.sock:ro"]
+    image = "nginxdemos/hello"
   }
 }
 
 /* Instance ----------------------------------------------------------------- */
 
-resource "digitalocean_droplet" "portainer" {
-  name   = "portainer"
+resource "digitalocean_droplet" "app" {
+  name   = "app"
   image  = "docker-18-04"
   region = "lon1"
   size   = "s-1vcpu-1gb"
 
-  user_data = module.docker-server.cloud_config
+  user_data = module.container-server.cloud_config
 }
 
-resource "digitalocean_floating_ip" "portainer" {
-  region = digitalocean_droplet.portainer.region
+resource "digitalocean_floating_ip" "app" {
+  region = digitalocean_droplet.app.region
 }
 
-resource "digitalocean_floating_ip_assignment" "portainer" {
-  ip_address = digitalocean_floating_ip.portainer.ip_address
-  droplet_id = digitalocean_droplet.portainer.id
+resource "digitalocean_floating_ip_assignment" "app" {
+  ip_address = digitalocean_floating_ip.app.ip_address
+  droplet_id = digitalocean_droplet.app.id
 }
 
 /* DNS ---------------------------------------------------------------------- */
 
 resource "digitalocean_domain" "default" {
-  name       = "portainer.${var.domain}"
-  ip_address = digitalocean_droplet.portainer.ipv4_address
+  name       = "app.${var.domain}"
+  ip_address = digitalocean_droplet.app.ipv4_address
 }
 
 /* Firewall ----------------------------------------------------------------- */
 
-resource "digitalocean_firewall" "portainer" {
-  name = "portainer-ingress"
+resource "digitalocean_firewall" "app" {
+  name = "app-ingress"
 
-  droplet_ids = [digitalocean_droplet.portainer.id]
+  droplet_ids = [digitalocean_droplet.app.id]
 
   inbound_rule {
     protocol         = "tcp"

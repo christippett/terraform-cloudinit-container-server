@@ -1,0 +1,3 @@
+# user entries can be created using `echo $(htpasswd -nb admin password)`
+
+# admin:$apr1$DvcU1VRX$prt1QwvJWSxGLohP9f8.l0

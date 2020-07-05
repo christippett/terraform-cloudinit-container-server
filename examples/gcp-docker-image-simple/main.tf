@@ -1,28 +1,25 @@
-module "docker-server" {
+module "container-server" {
   source = "../.."
 
-  domain            = "portainer.${var.domain}"
-  letsencrypt_email = var.letsencrypt_email
+  domain = "app.${var.domain}"
+  email  = var.email
 
   container = {
-    image   = "portainer/portainer"
-    command = "--admin-password ${replace(var.portainer_password, "$", "$$")}"
-    ports   = ["9000"]
-    volumes = ["/var/run/docker.sock:/var/run/docker.sock:ro"]
+    image = "nginxdemos/hello"
   }
 }
 
 /* Instance ----------------------------------------------------------------- */
 
-resource "google_compute_instance" "portainer" {
-  name         = "portainer"
+resource "google_compute_instance" "app" {
+  name         = "app"
   project      = var.project
-  zone         = var.zone
+  zone         = "${var.region}-a"
   machine_type = "e2-small"
   tags         = ["ssh", "http-server", "https-server"]
 
   metadata = {
-    user-data = module.docker-server.cloud_config
+    user-data = module.container-server.cloud_config
   }
 
   boot_disk {
@@ -32,7 +29,7 @@ resource "google_compute_instance" "portainer" {
   }
 
   network_interface {
-    subnetwork         = var.subnetwork_name
+    subnetwork         = var.subnet_name
     subnetwork_project = var.project
 
     access_config {
@@ -48,12 +45,12 @@ data "google_compute_image" "cos" {
 
 /* DNS ---------------------------------------------------------------------- */
 
-resource "google_dns_record_set" "portainer" {
+resource "google_dns_record_set" "app" {
   project      = var.project
-  name         = "portainer.${var.domain}."
+  name         = "app.${var.domain}."
   managed_zone = var.cloud_dns_zone
 
   type    = "A"
   ttl     = 300
-  rrdatas = [google_compute_instance.portainer.network_interface[0].access_config[0].nat_ip]
+  rrdatas = [google_compute_instance.app.network_interface[0].access_config[0].nat_ip]
 }

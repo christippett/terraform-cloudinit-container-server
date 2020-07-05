@@ -5,18 +5,24 @@ Deploys a single Docker image to a DigitalOcean Droplet.
 ## Usage
 
 ```hcl
-module "docker-server" {
+module "container-server" {
   source = "../.."
 
-  domain            = "portainer.${var.domain}"
-  letsencrypt_email = var.letsencrypt_email
+  domain = "app.${var.domain}"
+  email  = var.email
 
   container = {
-    image   = "portainer/portainer"
-    command = "--admin-password ${replace(var.portainer_password, "$", "$$")}"
-    ports   = ["9000"]
-    volumes = ["/var/run/docker.sock:/var/run/docker.sock:ro"]
+    image = "nginxdemos/hello"
   }
+}
+
+resource "digitalocean_droplet" "app" {
+  name   = "app"
+  image  = "docker-18-04"
+  region = "lon1"
+  size   = "s-1vcpu-1gb"
+
+  user_data = module.container-server.cloud_config # 👈
 }
 
 ```
@@ -25,11 +31,10 @@ module "docker-server" {
 
 ## Inputs
 
-| Name               | Description                                                          | Type     | Default | Required |
-| ------------------ | -------------------------------------------------------------------- | -------- | ------- | :------: |
-| domain             | The domain where the app will be hosted.                             | `string` | n/a     |   yes    |
-| letsencrypt_email  | Email address used when registering certificates with Let's Encrypt. | `string` | n/a     |   yes    |
-| portainer_password | Password to log into Portainer. Must be hashed using `bcrypt`.       | `string` | n/a     |   yes    |
+| Name   | Description                                                          | Type     | Default | Required |
+| ------ | -------------------------------------------------------------------- | -------- | ------- | :------: |
+| domain | The domain where the app will be hosted.                             | `string` | n/a     |   yes    |
+| email  | Email address used when registering certificates with Let's Encrypt. | `string` | n/a     |   yes    |
 
 ## Outputs
 

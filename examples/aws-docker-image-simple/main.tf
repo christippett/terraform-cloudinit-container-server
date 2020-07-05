@@ -1,45 +1,42 @@
-module "docker-server" {
+module "container-server" {
   source = "../.."
 
-  domain            = "portainer.${var.domain}"
-  letsencrypt_email = var.letsencrypt_email
+  domain = "app.${var.domain}"
+  email  = var.email
 
   container = {
-    image   = "portainer/portainer"
-    command = "--admin-password ${replace(var.portainer_password, "$", "$$")}"
-    ports   = ["9000"]
-    volumes = ["/var/run/docker.sock:/var/run/docker.sock:ro"]
+    image = "nginxdemos/hello"
   }
 }
 
 /* Instance ----------------------------------------------------------------- */
 
-resource "aws_instance" "portainer" {
+resource "aws_instance" "app" {
   ami             = "ami-0560993025898e8e8" # Amazon Linux 2
   instance_type   = "t2.micro"
-  security_groups = [aws_security_group.portainer.name]
+  security_groups = [aws_security_group.app.name]
 
   tags = {
-    Name = "portainer"
+    Name = "app"
   }
 
-  user_data = module.docker-server.cloud_config
+  user_data = module.container-server.cloud_config
 }
 
 /* DNS ---------------------------------------------------------------------- */
 
-resource "aws_route53_record" "portainer" {
+resource "aws_route53_record" "app" {
   zone_id = var.zone_id
-  name    = "portainer.${var.domain}"
+  name    = "app.${var.domain}"
   type    = "A"
-  records = [aws_instance.portainer.public_ip]
+  records = [aws_instance.app.public_ip]
   ttl     = "180"
 }
 
 /* Firewall ----------------------------------------------------------------- */
 
-resource "aws_security_group" "portainer" {
-  name = "allow_portainer"
+resource "aws_security_group" "app" {
+  name = "allow_app"
 
   ingress {
     description = "https"

@@ -8,66 +8,68 @@ Deploys a Docker Compose file to a Compute Engine instance.
 - Enables the [Google Cloud logging driver](https://docs.docker.com/config/containers/logging/gcplogs/) for improved container observability in Stackdriver
 - Uses a supplemental cloud-init config to format and mount a persistent disk for storing Let's Encrypt certificates that persist beyond the life of the instance
 - Creates a static IP and associates it with a Cloud DNS record
-- Enables Traefik's [monitoring dashboard](https://docs.traefik.io/operations/dashboard/) and API (pointing to `traefik.<your-domain>`)
+- Enables Traefik's [monitoring dashboard](https://docs.traefik.io/operations/dashboard/) and API (available at `<your-domain>:9000`)
 
 ## Usage
 
 ```hcl
-module "docker-server" {
-  source = "../.."
+resource "google_compute_instance" "app_server" {
+  name         = "app-server"
+  project      = var.project
+  zone         = "${var.region}-a"
+  machine_type = "e2-small"
+  tags         = ["ssh", "http-server", "https-server"]
 
-  domain       = var.domain
-  compose_file = file("${path.cwd}/docker-compose.yaml")
+  metadata = {
+    user-data = module.container-server.cloud_config # 👈
+  }
 
-  enable_letsencrypt = true
-  letsencrypt_email  = var.letsencrypt_email
+  service_account {
+    email  = google_service_account.default.email
+    scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+  }
 
-  enable_traefik_api   = true
-  traefik_api_user     = var.traefik_api_user
-  traefik_api_password = var.traefik_api_password
+  boot_disk {
+    initialize_params {
+      image = data.google_compute_image.cos.self_link
+    }
+  }
 
-  # https://docs.docker.com/config/containers/logging/gcplogs/
-  docker_log_driver = "gcplogs"
-  docker_log_opts   = { gcp-log-cmd = "true" }
+  network_interface {
+    subnetwork         = var.subnet_name
+    subnetwork_project = var.project
 
-  # custom instance configuration can be provided by providing supplemental cloud-init config(s)
-  cloudinit_part = [{
-    content_type = "text/cloud-config"
-    content = local.cloudinit_disk
-  }]
+    access_config {
+      nat_ip = google_compute_address.static.address
+    }
+  }
+
+  scheduling {
+    automatic_restart = true
+  }
+
+  allow_stopping_for_update = true
+
+  lifecycle {
+    ignore_changes = [attached_disk]
+  }
 }
 
-# prepare persistent disk
-
-locals {
-  cloudinit_disk = <<EOT
-#cloud-config
-
-bootcmd:
-  - fsck.ext4 -tvy /dev/sdb || mkfs.ext4 /dev/sdb
-  - mkdir -p /run/app
-  - mount -o defaults -t ext4 /dev/sdb /run/app
-
-EOT
-}
 ```
 
 # Terraform
 
 ## Inputs
 
-| Name                 | Description                                                                                          | Type     | Default | Required |
-| -------------------- | ---------------------------------------------------------------------------------------------------- | -------- | ------- | :------: |
-| cloud_dns_zone       | Cloud DNS zone name.                                                                                 | `string` | n/a     |   yes    |
-| domain               | The domain where the app will be hosted.                                                             | `string` | n/a     |   yes    |
-| letsencrypt_email    | Email address used when registering certificates with Let's Encrypt.                                 | `string` | n/a     |   yes    |
-| network_name         | The name of the network where the instance will be created.                                          | `string` | n/a     |   yes    |
-| project              | The ID of the project in which to provision resources.                                               | `string` | n/a     |   yes    |
-| region               | Google Cloud region where the instance will be created.                                              | `string` | n/a     |   yes    |
-| subnetwork_name      | The name of the subnet where the instance will be created.                                           | `string` | n/a     |   yes    |
-| traefik_api_password | Password to access Traefik dashboard (basic auth). Must be hashed following the `htpasswd` standard. | `string` | n/a     |   yes    |
-| traefik_api_user     | Username to access Traefik dashboard (basic auth).                                                   | `string` | n/a     |   yes    |
-| zone                 | Google Cloud region zone where the instance will be created.                                         | `string` | n/a     |   yes    |
+| Name               | Description                                                          | Type     | Default | Required |
+| ------------------ | -------------------------------------------------------------------- | -------- | ------- | :------: |
+| cloud_dns_zone     | Cloud DNS zone name.                                                 | `string` | n/a     |   yes    |
+| domain             | The domain where the app will be hosted.                             | `string` | n/a     |   yes    |
+| email              | Email address used when registering certificates with Let's Encrypt. | `string` | n/a     |   yes    |
+| project            | The ID of the project in which to provision resources.               | `string` | n/a     |   yes    |
+| region             | Google Cloud region where the instance will be created.              | `string` | n/a     |   yes    |
+| subnet_name        | The name of the subnet where the instance will be created.           | `string` | n/a     |   yes    |
+| portainer_password | Password to log into Portainer. Must be hashed using `bcrypt`.       | `string` | n/a     |   yes    |
 
 ## Outputs
 

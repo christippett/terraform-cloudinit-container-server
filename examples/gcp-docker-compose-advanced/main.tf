@@ -1,24 +1,29 @@
-module "docker-server" {
+module "container-server" {
   source = "../.."
 
-  domain       = var.domain
-  compose_file = file("${path.cwd}/docker-compose.yaml")
+  domain = var.domain
+  email  = var.email
 
-  enable_letsencrypt = true
-  letsencrypt_email  = var.letsencrypt_email
+  files = [
+    {
+      filename = "docker-compose.yaml"
+      content  = filebase64("${path.module}/assets/docker-compose.yaml")
+    },
+    {
+      filename = "users"
+      content  = filebase64("${path.module}/assets/users")
+    }
+  ]
+  env = {
+    PORTAINER_PASSWORD    = var.portainer_password
+    TRAEFIK_API_DASHBOARD = true
+    DOCKER_LOG_DRIVER     = "gcplogs"
+  }
 
-  enable_traefik_api   = true
-  traefik_api_user     = var.traefik_api_user
-  traefik_api_password = var.traefik_api_password
-
-  # https://docs.docker.com/config/containers/logging/gcplogs/
-  docker_log_driver = "gcplogs"
-  docker_log_opts   = { gcp-log-cmd = "true" }
-
-  # custom instance configuration can be provided by providing supplemental cloud-init config(s)
+  # extra cloud-init config provided to setup + format persistent disk
   cloudinit_part = [{
     content_type = "text/cloud-config"
-    content = local.cloudinit_disk
+    content      = local.cloudinit_disk
   }]
 }
 
@@ -40,14 +45,14 @@ EOT
 /* Instance ----------------------------------------------------------------- */
 
 resource "google_compute_instance" "app_server" {
-  name          = "app-server"
-  project       = var.project
-  zone          = var.zone
-  machine_type  = "e2-small"
-  tags          = ["ssh", "http-server", "https-server"]
+  name         = "app-server"
+  project      = var.project
+  zone         = "${var.region}-a"
+  machine_type = "e2-small"
+  tags         = ["ssh", "http-server", "https-server"]
 
   metadata = {
-    user-data = module.docker-server.cloud_config
+    user-data = module.container-server.cloud_config
   }
 
   service_account {
@@ -62,7 +67,7 @@ resource "google_compute_instance" "app_server" {
   }
 
   network_interface {
-    subnetwork         = var.subnetwork_name
+    subnetwork         = var.subnet_name
     subnetwork_project = var.project
 
     access_config {
@@ -92,7 +97,7 @@ resource "google_compute_disk" "default" {
   project = var.project
   name    = "disk-app-server"
   type    = "pd-standard"
-  zone    = var.zone
+  zone    = "${var.region}-a"
   size    = 10
 }
 
@@ -141,7 +146,7 @@ resource "google_service_account" "default" {
 }
 
 resource "google_project_iam_member" "default" {
-  project  = var.project
-  role     = "roles/logging.logWriter"
-  member   = "serviceAccount:${google_service_account.default.email}"
+  project = var.project
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.default.email}"
 }

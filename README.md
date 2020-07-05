@@ -66,38 +66,37 @@ Some providers expect this value to be base64 encoded, refer to the Terraform do
 
 ## Module Definition — Single Container
 
-The easiest way to get a container up and running is to specify an `image` and the `ports` to expose as part of the `container` input variable. The `container` variable can accept any attribute found under Docker Compose's `service` configuration ([docs](https://docs.docker.com/compose/compose-file/#service-configuration-reference)), but in most cases `image` and `ports` are all that's need to get started.
+The easiest way to get a container up and running is to specify an `image` within the `container` input variable. The `container` variable can accept any attribute found under Docker Compose's `service` configuration ([docs](https://docs.docker.com/compose/compose-file/#service-configuration-reference)), but in most cases `image` and `ports` are all that's need to get started.
 
-Let's Encrypt is enabled by default, so we also provide a `domain` and `letsencrypt_email`.
+Let's Encrypt is enabled by default, so we also provide a `domain` and `email`.
 
 ```hcl
-module "docker-server" {
+module "container-server" {
   source  = "christippett/container-server/cloudinit"
-  version = "1.0.0"
+  version = "~> 1.1"
 
-  domain            = "example.com"
-  letsencrypt_email = "me@example.com"
+  domain = "example.com"
+  email  = "me@example.com"
 
   container = {
     image   = "nginxdemos/hello"
-    ports   = ["80"]
   }
 }
 ```
 
 ## Module Definition — Docker Compose
 
-Choosing to use a Docker Compose file (`docker-compose.yaml`) provides greater flexibility with regards to how your containers are deployed, but requires you to manually configure your services to work with Traefik.
+Choosing to use a Docker Compose file (`docker-compose.yaml`) provides greater flexibility with regards to how your containers are deployed, but requires you to manually configure the labels required by Traefik for each of your service(s).
 
 ```hcl
-module "docker-server" {
+module "container-server" {
   source  = "christippett/container-server/cloudinit"
-  version = "1.0.0"
+  version = "~> 1.0"
 
-  domain            = "example.com"
-  letsencrypt_email = "me@example.com"
+  domain = "example.com"
+  email  = "me@example.com"
 
-  compose_file = file("docker-compose.yaml")
+  files = [{ filename = "docker-compose.yaml", content  = filebase64("${path.module}/assets/docker-compose.yaml") }]
 }
 ```
 
@@ -111,17 +110,18 @@ For more advanced options, refer to the official [Traefik documentation](https:/
 version: "3"
 
 services:
-  hello-world:
+  portainer:
     restart: unless-stopped
-    image: nginxdemos/hello
-    ports:
-      - "80"
+    image: portainer/portainer:latest
+    command: --admin-password ${PORTAINER_PASSWORD}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hello-world.rule=Host(`${domain}`)"
-      - "traefik.http.routers.hello-world.entrypoints=websecure"
-      - "traefik.http.routers.hello-world.tls=true"
-      - "traefik.http.routers.hello-world.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.portainer.rule=Host(`${domain}`)"
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.routers.portainer.tls=true"
+      - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
 networks:
   default:
     external:
@@ -132,8 +132,8 @@ networks:
 
 - 🔗 Traefik connects to services over the `web` Docker network by default — this network must be added for all service(s) you want exposed.
 - 🔒 Let's Encrypt is configured using the `letsencrypt` certificate resolver from Traefik. Refer to the example `docker-compose.yaml` file above for the labels used to enable and configure this feature.
-- 📋 Terraform shares the same variable interpolation syntax as Docker Compose's environment variables. We leverage this fact by parsing `docker-compose.yaml` as a Terraform template, providing both `${domain}` and `${letsencrypt_email}` as template variables. These can be used to parameterise your Docker Compose file without impacting its compatibility with other applications (such as running `docker-compose` locally).
-- 📊 The module provides an option for enabling Traefik's [monitoring dashboard](https://docs.traefik.io/operations/dashboard/) and API. When enabled, the dashboard is accessible from `https://traefik.${domain}/dashboard/` and the API from `https://traefik.${domain}/api/`. The **traefik** sub-domain is currently hard-coded and cannot be changed. Don't forget to create the corresponding DNS record for the dashboard and API to be accessible.
+- 📋 Almost all configuration options are defined as environment variables and saved as a `.env` file on the virtual machine. These values are read by Docker Compose on start-up and can be used to parameterise your Docker Compose file without impacting its use in other environments (such as running `docker-compose` locally).
+- 📊 The module provides an option for enabling Traefik's [monitoring dashboard](https://docs.traefik.io/operations/dashboard/) and API. When enabled, the dashboard is accessible from `https://${domain}:9000/dashboard/` and the API from `https://${domain}:9000/api/`. The port used by Traefik can be customised using the `TRAEFIK_OPS_PORT` environment variable.
 
 # Integration w/ Cloud Providers
 
@@ -149,7 +149,7 @@ resource "aws_instance" "vm" {
     Name = "container-server"
   }
 
-  user_data = module.docker-server.cloud_config # 👈
+  user_data = module.container-server.cloud_config # 👈
 }
 
 ```
@@ -165,7 +165,7 @@ resource "google_compute_instance" "vm" {
   tags         = ["http-server", "https-server"]
 
   metadata = {
-    user-data = module.docker-server.cloud_config # 👈
+    user-data = module.container-server.cloud_config # 👈
   }
 
   boot_disk {
@@ -178,9 +178,7 @@ resource "google_compute_instance" "vm" {
     subnetwork         = "vpc"
     subnetwork_project = "my-project"
 
-    access_config {
-      // Ephemeral IP
-    }
+    access_config { }
   }
 }
 
@@ -196,16 +194,11 @@ resource "azurerm_linux_virtual_machine" "vm" {
   size                = "Standard_F2"
   admin_username      = "adminuser"
 
-  custom_data = base64encode(module.docker-server.cloud_config) # 👈
+  custom_data = base64encode(module.container-server.cloud_config) # 👈
 
   network_interface_ids = [
     azurerm_network_interface.example.id,
   ]
-
-  admin_ssh_key {
-    username   = "adminuser"
-    public_key = file("~/.ssh/id_rsa.pub")
-  }
 
   os_disk {
     caching              = "ReadWrite"
@@ -231,7 +224,7 @@ resource "digitalocean_droplet" "vm" {
   region = "lon1"
   size   = "s-1vcpu-1gb"
 
-  user_data = module.docker-server.cloud_config # 👈
+  user_data = module.container-server.cloud_config # 👈
 }
 ```
 
@@ -239,21 +232,15 @@ resource "digitalocean_droplet" "vm" {
 
 ## Inputs
 
-| Name                       | Description                                                                                                                                                                        | Type                                                        | Default       | Required |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------- | :------: |
-| domain                     | The domain to deploy applications under.                                                                                                                                           | `string`                                                    | n/a           |   yes    |
-| letsencrypt_email          | The email address used for requesting certificates from Lets Encrypt.                                                                                                              | `string`                                                    | n/a           |   yes    |
-| cloudinit_part             | Supplementary cloud-init config used to customise the instance.                                                                                                                    | `list(object({ content_type : string, content : string }))` | `[]`          |    no    |
-| compose_file               | The content of a Compose file used to deploy one or more services to the server. Either `container` or `compose_file` must be specified.                                           | `string`                                                    | `null`        |    no    |
-| container                  | The container definition used to deploy a Docker image to the server. Follows the same schema as a Docker Compose service. Either `container` or `compose_file` must be specified. | `any`                                                       | `{}`          |    no    |
-| docker_log_driver          | Custom Docker log driver (e.g. `gcplogs`).                                                                                                                                         | `string`                                                    | `"json-file"` |    no    |
-| docker_log_opts            | Additional arguments/options for Docker log driver.                                                                                                                                | `map`                                                       | `{}`          |    no    |
-| enable_letsencrypt         | Whether Lets Encrypt certificates should be automatically generated.                                                                                                               | `bool`                                                      | `true`        |    no    |
-| enable_traefik_api         | Whether the Traefik dashboard and API should be enabled.                                                                                                                           | `bool`                                                      | `false`       |    no    |
-| letsencrypt_staging_server | Whether to use the Lets Encrypt staging server (useful for testing).                                                                                                               | `bool`                                                      | `false`       |    no    |
-| traefik_api_password       | The password used to access the Traefik dashboard + API.                                                                                                                           | `string`                                                    | `null`        |    no    |
-| traefik_api_user           | The username used to access the Traefik dashboard + API.                                                                                                                           | `string`                                                    | `"admin"`     |    no    |
-| traefik_version            | The version of Traefik used by the server.                                                                                                                                         | `string`                                                    | `"v2.2"`      |    no    |
+| Name                | Description                                                                                                                    | Type                                                        | Default | Required |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- | ------- | :------: |
+| domain              | The domain to deploy applications under.                                                                                       | `string`                                                    | n/a     |   yes    |
+| email               | The email address used for requesting certificates from Lets Encrypt.                                                          | `string`                                                    | n/a     |   yes    |
+| cloudinit_part      | Supplementary cloud-init config used to customise the instance.                                                                | `list(object({ content_type : string, content : string }))` | `[]`    |    no    |
+| container           | The container definition used to deploy a Docker image to the server. Follows the same schema as a Docker Compose service.     | `any`                                                       | `{}`    |    no    |
+| env                 | A list environment variables provided as key/value pairs. These can be used to interpolate values within Docker Compsoe files. | `map(string)`                                               | `{}`    |    no    |
+| files               | A list of files to upload to the server. Content must be base64 encoded. Files are available under the `/run/app/` directory.  | `list(object({ filename : string, content : string }))`     | `[]`    |    no    |
+| letsencrypt_staging | Boolean flag to decide whether the Let's Encrypt staging server should be used.                                                | `bool`                                                      | `false` |    no    |
 
 ## Outputs
 
@@ -261,3 +248,5 @@ resource "digitalocean_droplet" "vm" {
 | --------------------- | ---------------------------------------------------------------- |
 | cloud_config          | Content of the cloud-init config to be deployed to a server.     |
 | docker_compose_config | Content of the Docker Compose config to be deployed to a server. |
+| environment_variables | n/a                                                              |
+| included_files        | n/a                                                              |
