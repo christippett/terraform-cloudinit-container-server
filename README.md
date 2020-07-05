@@ -96,7 +96,12 @@ module "container-server" {
   domain = "example.com"
   email  = "me@example.com"
 
-  files = [{ filename = "docker-compose.yaml", content  = filebase64("${path.module}/assets/docker-compose.yaml") }]
+  files = [
+    {
+      filename = "docker-compose.yaml"
+      content  = filebase64("${path.module}/assets/docker-compose.yaml")
+    }
+  ]
 }
 ```
 
