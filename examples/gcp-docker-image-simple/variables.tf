@@ -8,17 +8,7 @@ variable "region" {
   type        = string
 }
 
-variable "zone" {
-  description = "Google Cloud region zone where the instance will be created."
-  type        = string
-}
-
-variable "network_name" {
-  description = "The name of the network where the instance will be created."
-  type        = string
-}
-
-variable "subnetwork_name" {
+variable "subnet_name" {
   description = "The name of the subnet where the instance will be created."
   type        = string
 }
@@ -28,7 +18,7 @@ variable "domain" {
   type        = string
 }
 
-variable "letsencrypt_email" {
+variable "email" {
   description = "Email address used when registering certificates with Let's Encrypt."
   type        = string
 }

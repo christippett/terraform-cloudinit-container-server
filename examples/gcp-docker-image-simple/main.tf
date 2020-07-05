@@ -1,13 +1,12 @@
 module "docker-server" {
   source = "../.."
 
-  domain            = "portainer.${var.domain}"
-  letsencrypt_email = var.letsencrypt_email
+  domain = "portainer.${var.domain}"
+  email  = var.email
 
   container = {
     image   = "portainer/portainer"
     command = "--admin-password ${replace(var.portainer_password, "$", "$$")}"
-    ports   = ["9000"]
     volumes = ["/var/run/docker.sock:/var/run/docker.sock:ro"]
   }
 }
@@ -17,7 +16,7 @@ module "docker-server" {
 resource "google_compute_instance" "portainer" {
   name         = "portainer"
   project      = var.project
-  zone         = var.zone
+  zone         = "${var.region}-a"
   machine_type = "e2-small"
   tags         = ["ssh", "http-server", "https-server"]
 
@@ -32,7 +31,7 @@ resource "google_compute_instance" "portainer" {
   }
 
   network_interface {
-    subnetwork         = var.subnetwork_name
+    subnetwork         = var.subnet_name
     subnetwork_project = var.project
 
     access_config {
