@@ -1,0 +1,22 @@
+version: "3.3"
+
+services:
+  app:
+    image: "${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_TAG}"
+    container_name: "${CONTAINER_NAME}"
+    command: "${CONTAINER_COMMAND}"
+    working_dir: "${CONTAINER_WORKING_DIR}"
+    volumes:
+      - "./:${CONTAINER_VOLUME_MOUNT}"
+    labels:
+      - "traefik.enable=${TRAEFIK_ENABLE:-true}"
+      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+    logging:
+      driver: ${DOCKER_LOG_DRIVER:-journald}
+networks:
+  default:
+    external:
+      name: "${DOCKER_NETWORK:-web}"
