@@ -2,6 +2,7 @@ version: "3.3"
 
 services:
   app:
+    restart: unless-stopped
     image: "${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_TAG}"
     container_name: "${CONTAINER_NAME}"
     command: "${CONTAINER_COMMAND}"

@@ -4,8 +4,6 @@ services:
   app:
     restart: unless-stopped
     image: ${IMAGE:-containous/whoami:latest}
-    ports:
-      - "80"
     labels:
       - "traefik.enable=${TRAEFIK_ENABLE:-true}"
       - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"

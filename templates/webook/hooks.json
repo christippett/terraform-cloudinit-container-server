@@ -1,0 +1,28 @@
+[
+  {
+    "id": "update-env",
+    "execute-command": "/app/.webhook/update-env.sh",
+    "include-command-output-in-response": true,
+    "command-working-directory": "/app",
+    "pass-arguments-to-command": [
+      {
+        "source": "payload",
+        "name": "key"
+      },
+      {
+        "source": "payload",
+        "name": "value"
+      }
+    ],
+    "trigger-rule": {
+      "match": {
+        "type": "regex",
+        "regex": "^[A-Z0-9_-]+$",
+        "parameter": {
+          "source": "payload",
+          "name": "key"
+        }
+      }
+    }
+  }
+]

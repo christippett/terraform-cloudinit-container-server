@@ -2,6 +2,7 @@ version: "3.3"
 
 services:
   traefik:
+    restart: unless-stopped
     image: "traefik:${TRAEFIK_IMAGE_TAG:-v2.2}"
     container_name: "traefik"
     command:
@@ -11,7 +12,7 @@ services:
       - "--accesslog.filters.retryattempts=true"
       - "--accesslog.filters.minduration=100ms"
       - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=${TRAEFIK_EXPOSED_BY_DEFAULT:-false}"
+      - "--providers.docker.exposedbydefault=${TRAEFIK_EXPOSED_BY_DEFAULT:-true}"
       - "--providers.docker.network=${DOCKER_NETWORK:-web}"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"

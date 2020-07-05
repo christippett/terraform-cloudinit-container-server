@@ -3,7 +3,7 @@
 write_files:
   %{~ for f in files ~}
   - path: /run/app/${f.filename}
-    permissions: 0644
+    permissions: %{ if substr(f.filename, -2, 2) == "sh"}0755%{else}0644%{endif}
     content: ${f.content}
     encoding: b64
   %{~ endfor ~}
@@ -13,7 +13,7 @@ write_files:
     content: |
       [Unit]
       Description=Docker Compose Service (${coalesce(c.name, "app")})
-      Requires=docker.service
+      Requires=docker.service ${join(" ", [ for f in docker_compose_files : "${f.name}.service" if f.name != null && c.name == null ])}
       After=docker.service
 
       [Service]
@@ -30,6 +30,35 @@ write_files:
       WantedBy=multi-user.target
 
   %{~ endfor ~}
+  - path: /etc/systemd/system/app-monitor.service
+    permissions: 0644
+    content: |
+      [Unit]
+      Description=Restart application
+
+      [Service]
+      Type=oneshot
+      WorkingDirectory=/run/app
+      Environment=HOME=/run/app TMP=/run/app/.tmp
+      PassEnvironment=HOME TMP
+      ExecStartPre=-/run/app/.bin/docker-compose pull --ignore-pull-failures
+      ExecStart=/usr/bin/systemctl restart app.service
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /etc/systemd/system/app-monitor.path
+    permissions: 0644
+    content: |
+      [Unit]
+      Description=Watch for updates to .env
+      After=app.service
+
+      [Path]
+      PathChanged=/run/app/.env
+
+      [Install]
+      WantedBy=multi-user.target
 
 runcmd:
   - set -x
@@ -44,4 +73,4 @@ runcmd:
       chmod +x /run/app/.bin/docker-compose
     fi
   - systemctl daemon-reload
-  - systemctl enable --now traefik app
+  - systemctl enable --now app app-monitor.path

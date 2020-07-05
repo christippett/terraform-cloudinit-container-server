@@ -39,3 +39,9 @@ variable "cloudinit_part" {
   type        = list(object({ content_type : string, content : string }))
   default     = []
 }
+
+variable "enable_webhook" {
+  description = "Whether the enable the webhook endpoint on the server, allowing updates to be made independent of Terraform."
+  type        = bool
+  default     = false
+}

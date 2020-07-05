@@ -5,6 +5,7 @@ module "container-server" {
   email  = var.email
 
   letsencrypt_staging = true # delete this or set to false to enable production Let's Encrypt certificates
+  enable_webhook      = true
 
   files = [
     {
@@ -19,14 +20,18 @@ module "container-server" {
   ]
 
   env = {
+    IMAGE                 = "containous/whoami:latest"
     TRAEFIK_API_DASHBOARD = true
   }
 
   # custom instance configuration is possible through supplemental cloud-init config(s)
-  cloudinit_part = [{
-    content_type = "text/cloud-config"
-    content      = local.cloudinit_configure_gcr
-  }]
+  cloudinit_part = [
+    {
+      content_type = "text/cloud-config"
+      content      = local.cloudinit_configure_gcr
+    }
+  ]
+
 }
 
 # configure access to private gcr repositories
@@ -52,6 +57,7 @@ write_files:
       WantedBy=multi-user.target
 
 runcmd:
+  - systemctl daemon-reload
   - systemctl enable --now gcr.service
 
 EOT

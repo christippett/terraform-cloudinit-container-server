@@ -6,7 +6,7 @@ data "cloudinit_config" "config" {
     filename     = "cloud-init.yaml"
     merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
     content_type = "text/cloud-config"
-    content = templatefile("${path.module}/templates/cloud-config.yaml", {
+    content = templatefile("${local.dir}/cloud-config.yaml", {
       files                = local.files
       docker_compose_files = local.docker_compose_files
     })
@@ -26,7 +26,9 @@ data "cloudinit_config" "config" {
 }
 
 locals {
-  template_compose_content = file("${path.module}/templates/docker-compose.default.yaml")
+  dir = "${path.module}/templates"
+
+  template_compose_content = file("${local.dir}/docker-compose.default.yaml")
   template_compose_data    = yamldecode(local.template_compose_content)
 
   # merge default Docker Compose template with values from `var.container`
@@ -55,40 +57,56 @@ locals {
   dot_env_data = merge({
     DOMAIN                     = var.domain
     LETSENCRYPT_EMAIL          = var.email
-    LETSENCRYPT_SERVER         = var.letsencrypt_staging ? "https://acme-staging-v02.api.letsencrypt.org/directory" : "https://acme-v02.api.letsencrypt.org/directory"
+    LETSENCRYPT_SERVER         = var.letsencrypt_staging ? "https://acme-staging-v02.api.letsencrypt.org/directory" : null
     CONTAINER_IMAGE_NAME       = try(split(":", var.container.image)[0], null)
-    CONTAINER_IMAGE_TAG        = try(split(":", var.container.image)[1], "latest")
-    CONTAINER_WORKING_DIR      = lookup(var.container, "working_dir", "/app")
-    CONTAINER_VOLUME_MOUNT     = "/app"
+    CONTAINER_IMAGE_TAG        = try(split(":", var.container.image)[1], null)
+    CONTAINER_WORKING_DIR      = lookup(var.container, "working_dir", null)
+    CONTAINER_VOLUME_MOUNT     = null
     CONTAINER_NAME             = lookup(var.container, "container_name", null)
     CONTAINER_COMMAND          = lookup(var.container, "command", null)
     CONTAINER_PORT             = lookup(var.container, "port", null)
     DOCKER_NETWORK             = "web"
-    DOCKER_LOG_DRIVER          = "journald"
-    TRAEFIK_ENABLED            = true
-    TRAEFIK_IMAGE_TAG          = "v2.2"
-    TRAEFIK_LOG_LEVEL          = "INFO"
-    TRAEFIK_API_DASHBOARD      = false
-    TRAEFIK_PASSWD_FILE        = "users"
-    TRAEFIK_EXPOSED_BY_DEFAULT = true
-    TRAEFIK_OPS_PORT           = 9000
+    DOCKER_LOG_DRIVER          = null
+    TRAEFIK_ENABLED            = null
+    TRAEFIK_IMAGE_TAG          = null
+    TRAEFIK_LOG_LEVEL          = null
+    TRAEFIK_API_DASHBOARD      = null
+    TRAEFIK_PASSWD_FILE        = null
+    TRAEFIK_EXPOSED_BY_DEFAULT = null
+    TRAEFIK_OPS_PORT           = null
+    WEBHOOK_URL_PREFIX         = var.enable_webhook ? "hooks" : null
+    WEBHOOK_HTTP_METHOD        = var.enable_webhook ? "PATCH" : null
   }, var.env)
   dot_env_content = join("\n", [for k, v in local.dot_env_data : "${k}=${v}" if v != null])
 
   compose_file_regex = "(?P<filename>docker-compose(?:\\.(?P<name>.*?))?\\.ya?ml)"
+
+  webhook_files = var.enable_webhook ? [
+    { filename = "docker-compose.webhook.yaml", content = filebase64("${local.dir}/docker-compose.webhook.yaml") },
+    { filename = ".webhook/hooks.json", content = filebase64("${local.dir}/webook/hooks.json") },
+    { filename = ".webhook/update-env.sh", content = filebase64("${local.dir}/webook/update-env.sh") }
+  ] : []
+
   files = concat(
-    [{ filename = ".env", content = base64encode(local.dot_env_content) }],
-    [{ filename = "users", content = filebase64("${path.module}/templates/users") }],
-    [{ filename = "docker-compose.traefik.yaml", content = filebase64("${path.module}/templates/docker-compose.traefik.yaml") }],
+    [
+      { filename = ".env", content = base64encode(local.dot_env_content) },
+      { filename = "users", content = filebase64("${local.dir}/users.sample") },
+      { filename = "docker-compose.traefik.yaml", content = filebase64("${local.dir}/docker-compose.traefik.yaml") },
+    ],
     # list of user-provided files to include (excl. docker-compose files)
     [for f in var.files : f if ! can(regex(local.compose_file_regex, f.filename))],
-    # list of user-provided docker-compose files to include (if available),
+    # webhook related files (if enabled)
+    local.webhook_files,
+    # list of user-provided docker-compose files (if available)
     # if no docker-compose files are present, a default docker-compose file
-    # will be included and populated using values from `var.container`
+    # will be included using values from `var.container`
     coalescelist(
       [for f in var.files : f if can(regex(local.compose_file_regex, f.filename))],
       [{ filename = "docker-compose.app.yaml", content = base64encode(local.default_compose_content) }]
     )
   )
+
+  # list of Docker Compose files only, each file will have a corresponding
+  # systemd service created
   docker_compose_files = [for f in local.files : merge(regex(local.compose_file_regex, f.filename), f) if can(regex(local.compose_file_regex, f.filename))]
 }

@@ -1,17 +1,18 @@
-# Docker Image — Google Cloud Platform
+# Docker Compose — Google Cloud Platform
 
-Deploys a single Docker image to a Compute Engine instance.
+Deploys a custom Docker Compose file to a Compute Engine instance and enables updates via webhook.
 
 ## Usage
 
 ```hcl
-module "container" {
+module "container-server" {
   source = "../.."
 
   domain = "app.${var.domain}"
-  email  = var.letsencrypt_email
+  email  = var.email
 
   letsencrypt_staging = true # delete this or set to false to enable production Let's Encrypt certificates
+  enable_webhook      = true # webhook protected by basic auth
 
   files = [
     {
@@ -26,45 +27,31 @@ module "container" {
   ]
 
   env = {
+    IMAGE                 = "containous/whoami:latest"
     TRAEFIK_API_DASHBOARD = true
   }
 
   # custom instance configuration is possible through supplemental cloud-init config(s)
-  cloudinit_part = [{
-    content_type = "text/cloud-config"
-    content      = local.cloudinit_configure_gcr
-  }]
+  cloudinit_part = [
+    {
+      content_type = "text/cloud-config"
+      content      = local.cloudinit_configure_gcr
+    }
+  ]
+
 }
 
-# configure access to private gcr repositories
+```
 
-locals {
-  cloudinit_configure_gcr = <<EOT
-#cloud-config
+Once deployed, updates to the container image can be made via the enabled webhook.
 
-write_files:
-  - path: /etc/systemd/system/gcr.service
-    permissions: 0644
-    content: |
-      [Unit]
-      Description=Configure Google Container Registry
-      Before=docker.service
-
-      [Service]
-      Type=oneshot
-      Environment=HOME=/run/app
-      PassEnvironment=HOME
-      ExecStart=/usr/bin/docker-credential-gcr configure-docker
-
-      [Install]
-      WantedBy=multi-user.target
-
-runcmd:
-  - systemctl enable --now gcr.service
-
-EOT
-}
-
+```bash
+curl \
+  --user admin:password \
+  --header "Content-Type: application/json" \
+  --request PATCH \
+  --data '{ "key": "IMAGE", "value": "nginxdemos/hello:latest" }' \
+  https://app.example.com:9000/hooks/update-env
 ```
 
 # Terraform

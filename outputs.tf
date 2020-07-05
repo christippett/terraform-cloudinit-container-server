@@ -8,7 +8,7 @@ output "environment_variables" {
 }
 
 output "included_files" {
-  value = [for f in local.files : f.filename]
+  value = toset([for f in local.files : f.filename])
 }
 
 output "docker_compose_config" {
