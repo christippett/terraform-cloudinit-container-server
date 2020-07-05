@@ -19,6 +19,7 @@ data "cloudinit_config" "config" {
 
   part {
     filename     = "cloud-init.yaml"
+    merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
     content_type = "text/cloud-config"
     content = templatefile(
       "${path.module}/templates/cloud-config.yaml",
@@ -44,6 +45,7 @@ data "cloudinit_config" "config" {
   dynamic "part" {
     for_each = var.cloudinit_part
     content {
+      merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
       content_type = part.value.content_type
       content      = part.value.content
    }
