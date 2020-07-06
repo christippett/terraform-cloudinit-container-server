@@ -31,11 +31,17 @@ locals {
   template_compose_content = file("${local.dir}/docker-compose.default.yaml")
   template_compose_data    = yamldecode(local.template_compose_content)
 
+  # do not merge fields that can defined as environment variables
+  user_compose_data = {
+    for k, v in var.container :
+    k => v if ! contains(["image", "container_name", "command"], k)
+  }
+
   # merge default Docker Compose template with values from `var.container`
   default_compose_data = {
     version = "3.3"
     services = {
-      app = merge(local.template_compose_data.services.app, var.container, {
+      app = merge(local.template_compose_data.services.app, local.user_compose_data, {
         for key, val in local.template_compose_data.services.app : key =>
         can(tolist(val)) && contains(keys(var.container), key)
         ? try(setunion(val, lookup(var.container, key, [])), val)
