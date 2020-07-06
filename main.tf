@@ -102,7 +102,7 @@ locals {
     # will be included using values from `var.container`
     coalescelist(
       [for f in var.files : f if can(regex(local.compose_file_regex, f.filename))],
-      [{ filename = "docker-compose.app.yaml", content = base64encode(local.default_compose_content) }]
+      [{ filename = "docker-compose.yaml", content = base64encode(local.default_compose_content) }]
     )
   )
 
