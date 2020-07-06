@@ -6,9 +6,6 @@ services:
     image: "${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_TAG}"
     container_name: "${CONTAINER_NAME}"
     command: "${CONTAINER_COMMAND}"
-    working_dir: "${CONTAINER_WORKING_DIR:-/app}"
-    volumes:
-      - "./:${CONTAINER_VOLUME_MOUNT:-/app}"
     labels:
       - "traefik.enable=${TRAEFIK_ENABLE:-true}"
       - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
