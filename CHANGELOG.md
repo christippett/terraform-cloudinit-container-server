@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0-alpha.1](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0-alpha.0...v1.2.0-alpha.1) (2020-07-06)
+
+
+### Bug Fixes
+
+* Add default values for environment variables in default docker-compose.yaml file ([2926626](https://github.com/christippett/terraform-cloudinit-container-server/commit/29266266851a42980699fe009f7800768ef53189))
+
 ## [1.2.0-alpha.0](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.1.0...v1.2.0-alpha.0) (2020-07-05)
 
 
