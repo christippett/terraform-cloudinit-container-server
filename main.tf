@@ -43,9 +43,9 @@ locals {
     services = {
       app = merge(local.template_compose_data.services.app, local.user_compose_data, {
         for key, val in local.template_compose_data.services.app : key =>
-        can(tolist(val)) && contains(keys(var.container), key)
-        ? try(setunion(val, lookup(var.container, key, [])), val)
-        : lookup(var.container, key, val)
+        can(tolist(val)) && contains(keys(local.user_compose_data), key)
+        ? try(setunion(val, lookup(local.user_compose_data, key, [])), val)
+        : lookup(local.user_compose_data, key, val)
       })
     }
     networks = {
