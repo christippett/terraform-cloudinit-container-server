@@ -36,8 +36,6 @@ services:
       - "./:/app"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     labels:
-      - "traefik.http.middlewares.admin.basicauth.usersfile=/app/${TRAEFIK_PASSWD_FILE:-users}"
-      - "traefik.http.routers.traefik-api.middlewares=admin"
       - "traefik.http.routers.traefik-api.service=api@internal"
       - "traefik.http.routers.traefik-api.rule=Host(`${DOMAIN}`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))"
       - "traefik.http.routers.traefik-api.entrypoints=ops"

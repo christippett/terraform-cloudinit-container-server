@@ -19,7 +19,6 @@ services:
     labels:
       - "traefik.http.routers.webhook.rule=Host(`${DOMAIN}`) && PathPrefix(`/${WEBHOOK_URL_PREFIX:-hooks}`)"
       - "traefik.http.routers.webhook.entrypoints=ops"
-      - "traefik.http.routers.webhook.middlewares=admin"
       - "traefik.http.routers.webhook.tls.certresolver=letsencrypt"
 networks:
   default:
