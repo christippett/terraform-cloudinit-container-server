@@ -3,7 +3,7 @@ version: "3.3"
 services:
   app:
     restart: unless-stopped
-    image: "${CONTAINER_IMAGE_NAME}:${CONTAINER_IMAGE_TAG}"
+    image: "${IMAGE_NAME}:${IMAGE_TAG}"
     env_file:
       - app.env
     container_name: "${CONTAINER_NAME}"
