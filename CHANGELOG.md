@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0-alpha.5](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0-alpha.4...v1.2.0-alpha.5) (2020-07-25)
+
+
+### Features
+
+* Create app.env containing user-defined environment variables ([9c3905a](https://github.com/christippett/terraform-cloudinit-container-server/commit/9c3905aff8537aa0542aee2ad06fe3a24f413880))
+
 ## [1.2.0-alpha.4](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0-alpha.3...v1.2.0-alpha.4) (2020-07-07)
 
 
