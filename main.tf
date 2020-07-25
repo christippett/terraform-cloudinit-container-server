@@ -81,8 +81,8 @@ locals {
     WEBHOOK_URL_PREFIX         = var.enable_webhook ? "hooks" : null
     WEBHOOK_HTTP_METHOD        = var.enable_webhook ? "PATCH" : null
   }, var.env)
-  dot_env_content = join("\n", [for k, v in local.dot_env_data : "${k}=${v}" if v != null]))
-  app_env_content = join("\n", [for k, v in var.env : "${k}=${v}" if v != null]))
+  dot_env_content = join("\n", [for k, v in local.dot_env_data : "${k}=${v}" if v != null])
+  app_env_content = join("\n", [for k, v in var.env : "${k}=${v}" if v != null])
 
   compose_file_regex = "(?P<filename>docker-compose(?:\\.(?P<name>.*?))?\\.ya?ml)"
 
