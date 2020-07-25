@@ -15,7 +15,7 @@ services:
       - "traefik.http.routers.app.tls=true"
       - "traefik.http.routers.app.tls.certresolver=letsencrypt"
     logging:
-      driver: ${DOCKER_LOG_DRIVER:-journald}
+      driver: ${DOCKER_LOG_DRIVER:-json-file}
 networks:
   default:
     external:
