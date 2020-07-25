@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0-alpha.8](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0-alpha.7...v1.2.0-alpha.8) (2020-07-25)
+
+
+### Bug Fixes
+
+* Syntax issue introduced in last update ([e6ba872](https://github.com/christippett/terraform-cloudinit-container-server/commit/e6ba872f7dffbcbfe9cb2d43b2bf2a3cc071ae4b))
+
 ## [1.2.0-alpha.7](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0-alpha.6...v1.2.0-alpha.7) (2020-07-25)
 
 
