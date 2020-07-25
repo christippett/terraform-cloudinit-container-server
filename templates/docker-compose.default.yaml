@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     image: "${IMAGE_NAME}:${IMAGE_TAG}"
     env_file:
-      - app.env
+      - .env
     container_name: "${CONTAINER_NAME}"
     command: "${CONTAINER_COMMAND}"
     labels:

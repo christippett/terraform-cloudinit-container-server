@@ -82,7 +82,6 @@ locals {
     WEBHOOK_HTTP_METHOD        = var.enable_webhook ? "PATCH" : null
   }, var.env)
   dot_env_content = join("\n", [for k, v in local.dot_env_data : "${k}=${v}" if v != null])
-  app_env_content = join("\n", [for k, v in var.env : "${k}=${v}" if v != null])
 
   compose_file_regex = "(?P<filename>docker-compose(?:\\.(?P<name>.*?))?\\.ya?ml)"
 
@@ -95,7 +94,6 @@ locals {
   files = concat(
     [
       { filename = ".env", content = base64encode(local.dot_env_content) },
-      { filename = "app.env", content = base64encode(local.app_env_content) },
       { filename = "docker-compose.traefik.yaml", content = filebase64("${local.dir}/docker-compose.traefik.yaml") },
     ],
     # list of user-provided files to include (excl. docker-compose files)
