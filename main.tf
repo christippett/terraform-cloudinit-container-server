@@ -96,7 +96,6 @@ locals {
     [
       { filename = ".env", content = base64encode(local.dot_env_content) },
       { filename = "app.env", content = base64encode(local.app_env_content) },
-      { filename = "users", content = filebase64("${local.dir}/users.sample") },
       { filename = "docker-compose.traefik.yaml", content = filebase64("${local.dir}/docker-compose.traefik.yaml") },
     ],
     # list of user-provided files to include (excl. docker-compose files)
