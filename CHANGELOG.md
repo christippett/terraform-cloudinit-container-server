@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0-alpha.9](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0-alpha.8...v1.2.0-alpha.9) (2020-07-25)
+
+
+### Bug Fixes
+
+* Revert back to using a one env var file ([dc275b1](https://github.com/christippett/terraform-cloudinit-container-server/commit/dc275b18eb959c426b05e99f8e1ad3777f47e865))
+
 ## [1.2.0-alpha.8](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0-alpha.7...v1.2.0-alpha.8) (2020-07-25)
 
 
