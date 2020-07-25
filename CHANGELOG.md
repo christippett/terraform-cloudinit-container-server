@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0-alpha.6](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0-alpha.5...v1.2.0-alpha.6) (2020-07-25)
+
+
+### Features
+
+* Simplify default config by removing Traefik auth middleware ([10edade](https://github.com/christippett/terraform-cloudinit-container-server/commit/10edadeb1a05d2bc85c1916d397cf4aae6c4326d))
+* Use `json-file` logging driver as the default option ([884048a](https://github.com/christippett/terraform-cloudinit-container-server/commit/884048a96b0fe3a3118d46ba352e7e0a8bea1a6d))
+
 ## [1.2.0-alpha.5](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0-alpha.4...v1.2.0-alpha.5) (2020-07-25)
 
 
