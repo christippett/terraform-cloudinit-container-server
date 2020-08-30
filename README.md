@@ -16,8 +16,8 @@ The module takes things one step further by bootstrapping an environment that ho
 
 - ☁️ This module is compatible with most major cloud providers:
   - **AWS** ([see example](./examples/aws-docker-image-simple/))
-  - **Google Cloud Platform** ([see example](./examples/digitalocean-docker-image-simple/))
-  - **DigitalOcean** ([see example](./examples/gcp-docker-image-simple/))
+  - **Google Cloud Platform** ([see example](./examples/gcp-docker-image-simple/))
+  - **DigitalOcean** ([see example](./examples/digitalocean-docker-image-simple/))
   - **Azure** ([see example](./examples/azure-docker-image-simple))
   - _(and theoretically any other platform that supports cloud-init)_
 - 🌐 Installs and configures **Traefik** under-the-hood as the reverse proxy for your container(s)
