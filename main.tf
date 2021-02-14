@@ -65,7 +65,7 @@ locals {
     LETSENCRYPT_EMAIL          = var.email
     LETSENCRYPT_SERVER         = var.letsencrypt_staging ? "https://acme-staging-v02.api.letsencrypt.org/directory" : null
     IMAGE_NAME                 = try(split(":", var.container.image)[0], null)
-    IMAGE_TAG                  = try(split(":", var.container.image)[1], null)
+    IMAGE_TAG                  = try(split(":", var.container.image)[1], "latest")
     CONTAINER_NAME             = lookup(var.container, "container_name", null)
     CONTAINER_COMMAND          = lookup(var.container, "command", null)
     CONTAINER_PORT             = lookup(var.container, "port", null)
