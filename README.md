@@ -165,7 +165,7 @@ resource "aws_instance" "vm" {
 resource "google_compute_instance" "vm" {
   name         = "container-server"
   project      = "my-project"
-  zone         = "australia-southeast1
+  zone         = "australia-southeast1"
   machine_type = "e2-small"
   tags         = ["http-server", "https-server"]
 
