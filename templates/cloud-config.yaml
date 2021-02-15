@@ -2,7 +2,7 @@
 
 write_files:
   %{~ for f in files ~}
-  - path: /run/app/${f.filename}
+  - path: /var/app/${f.filename}
     permissions: %{ if substr(f.filename, -2, 2) == "sh"}0755%{else}0644%{endif}
     content: ${f.content}
     encoding: b64
@@ -17,14 +17,22 @@ write_files:
       After=docker.service
 
       [Service]
-      Type=simple
-      WorkingDirectory=/run/app
-      Environment=HOME=/run/app TMP=/run/app/.tmp
-      PassEnvironment=HOME TMP
-      ExecStartPre=-/run/app/.bin/docker-compose -f ${c.filename} rm -f
-      ExecStart=/run/app/.bin/docker-compose -f ${c.filename} up
-      ExecStop=/run/app/.bin/docker-compose -f ${c.filename} stop -t 15
-      ExecStopPost=-/run/app/.bin/docker-compose -f ${c.filename} rm -f
+      Type=oneshot
+      RemainAfterExit=yes
+      WorkingDirectory=/var/app
+      EnvironmentFile=/var/app/.env
+      ExecStartPre=-/usr/bin/docker run --rm \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v "/var/app:/var/app" -w="/var/app" \
+        "$${COMPOSE_DOCKER_IMAGE}:$${COMPOSE_DOCKER_TAG}" -f ${c.filename} rm
+      ExecStart=/usr/bin/docker run --rm \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v "/var/app:/var/app" -w="/var/app" \
+        "$${COMPOSE_DOCKER_IMAGE}:$${COMPOSE_DOCKER_TAG}" -f ${c.filename} up -d
+      ExecStop=/usr/bin/docker run --rm \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v "/var/app:/var/app" -w="/var/app" \
+        "$${COMPOSE_DOCKER_IMAGE}:$${COMPOSE_DOCKER_TAG}" -f ${c.filename} stop -t 15
 
       [Install]
       WantedBy=multi-user.target
@@ -38,10 +46,12 @@ write_files:
 
       [Service]
       Type=oneshot
-      WorkingDirectory=/run/app
-      Environment=HOME=/run/app TMP=/run/app/.tmp
-      PassEnvironment=HOME TMP
-      ExecStartPre=-/run/app/.bin/docker-compose pull --ignore-pull-failures
+      WorkingDirectory=/var/app
+      EnvironmentFile=/var/app/.env
+      ExecStartPre=-/usr/bin/docker run --rm \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v "/var/app:/var/app" -w="/var/app" \
+        "$${COMPOSE_DOCKER_IMAGE}:$${COMPOSE_DOCKER_TAG}" pull --ignore-pull-failures
       ExecStart=/usr/bin/systemctl restart app.service
 
       [Install]
@@ -55,22 +65,17 @@ write_files:
       After=app.service
 
       [Path]
-      PathChanged=/run/app/.env
+      PathChanged=/var/app/.env
 
       [Install]
       WantedBy=multi-user.target
 
 runcmd:
-  - set -x
-  - mkdir -p /run/app/.bin
-  - mkdir -p /run/app/.tmp
+  # Install Docker if required. Note: This installation method is not
+  # recommended for production deployments
+  # https://github.com/docker/docker-install
+  - which docker > /dev/null 2>&1 || curl -fsSL https://get.docker.com | sh
+  # Create network used by Traefik to identify running containers
   - "[ $(docker network list -q --filter=name=web) ] || docker network create web"
-  - |
-    if [ ! -f /run/app/.bin/docker-compose ]; then
-      curl --connect-timeout 20 --retry 3 --retry-delay 0 --retry-max-time 90 \
-        -LJ "https://github.com/docker/compose/releases/download/1.26.1/docker-compose-$(uname -s)-$(uname -m)" \
-        -o /run/app/.bin/docker-compose
-      chmod +x /run/app/.bin/docker-compose
-    fi
-  - systemctl daemon-reload
-  - systemctl enable --now app app-monitor.path
+  # Enable systemd services responsible for managing Docker Compose services
+  - systemctl daemon-reload && systemctl enable --now app app-monitor.path
