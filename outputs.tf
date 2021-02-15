@@ -4,7 +4,7 @@ output "cloud_config" {
 }
 
 output "environment_variables" {
-  value = local.dot_env_data
+  value = local.environment
 }
 
 output "included_files" {
