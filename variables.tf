@@ -45,3 +45,15 @@ variable "enable_webhook" {
   type        = bool
   default     = false
 }
+
+variable "docker_compose_image" {
+  description = "Docker image used to run Docker Compose commands. (default: docker/compose)"
+  type        = string
+  default     = "docker/compose"
+}
+
+variable "docker_compose_tag" {
+  description = "Tagged version of Docker Compose to use. (default: latest)"
+  type        = string
+  default     = "latest"
+}

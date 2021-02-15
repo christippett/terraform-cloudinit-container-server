@@ -71,6 +71,8 @@ locals {
     CONTAINER_PORT             = lookup(var.container, "port", null)
     DOCKER_NETWORK             = "web"
     DOCKER_LOG_DRIVER          = null
+    COMPOSE_DOCKER_IMAGE       = var.docker_compose_image
+    COMPOSE_DOCKER_TAG         = var.docker_compose_tag
     TRAEFIK_ENABLED            = null
     TRAEFIK_IMAGE_TAG          = null
     TRAEFIK_LOG_LEVEL          = null
