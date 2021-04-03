@@ -33,7 +33,7 @@ resource "digitalocean_floating_ip_assignment" "app" {
 
 resource "digitalocean_domain" "default" {
   name       = "app.${var.domain}"
-  ip_address = digitalocean_droplet.app.ipv4_address
+  ip_address = digitalocean_floating_ip.app.ip_address
 }
 
 /* Firewall ----------------------------------------------------------------- */
