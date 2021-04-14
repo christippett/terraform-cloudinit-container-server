@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0...v1.2.1) (2021-04-14)
+
+### Bug Fixes
+
+- Update DigitalOcean example to allow outgoing traffic from Droplets (so Docker
+  can pull images)
+  ([404d46b](https://github.com/christippett/terraform-cloudinit-container-server/commit/404d46bd3f53dc925536a4025667be350109d6cc)),
+  closes
+  [#10](https://github.com/christippett/terraform-cloudinit-container-server/issues/10)
+
 ## [1.2.0](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0-alpha.9...v1.2.0) (2021-02-15)
 
 ### Features
