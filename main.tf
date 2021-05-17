@@ -1,160 +1,157 @@
-/* ========================================================================== */
-/* CONFIGURATION OPTIONS / ENVIRONMENT VARIABLES                              */
-/* ========================================================================== */
-
 locals {
 
-  # Parse container definition and exclude fields that are better defined as
-  # environment variables (see below).
+  # Environment Variables --------------------------------------------------------
 
-  container = {
-    for k, v in var.container : k => v if !contains(["image", "container_name", "command"], k)
+  letsencrypt = {
+    prod    = "https://acme-v02.api.letsencrypt.orgdirectory"
+    staging = "https://acme-staging-v02.api.letsencrypt.org/directory"
   }
 
-  # Define environment variables that will be written to `/var/app/.env` and
-  # made available to all running services, including Docker Compose and systemd.
-
-  # The list below is not exhaustive, refer to the Docker documentation for additional
-  # configuration options (https://docs.docker.com/compose/reference/envvars/)
-
-  environment = merge({
-    DOMAIN                     = var.domain
-    LETSENCRYPT_EMAIL          = var.email
-    LETSENCRYPT_SERVER         = var.letsencrypt_staging ? "https://acme-staging-v02.api.letsencrypt.org/directory" : null
-    IMAGE_NAME                 = try(split(":", var.container.image)[0], null)
-    IMAGE_TAG                  = try(split(":", var.container.image)[1], "latest")
-    CONTAINER_NAME             = lookup(var.container, "container_name", null)
-    CONTAINER_COMMAND          = lookup(var.container, "command", null)
-    CONTAINER_PORT             = lookup(var.container, "port", null)
-    DOCKER_NETWORK             = "web"
-    DOCKER_LOG_DRIVER          = null
-    COMPOSE_DOCKER_IMAGE       = var.docker_compose_image
-    COMPOSE_DOCKER_TAG         = var.docker_compose_tag
-    TRAEFIK_ENABLED            = null
-    TRAEFIK_IMAGE_TAG          = null
-    TRAEFIK_LOG_LEVEL          = null
-    TRAEFIK_API_DASHBOARD      = null
-    TRAEFIK_PASSWD_FILE        = null
-    TRAEFIK_EXPOSED_BY_DEFAULT = null
-    TRAEFIK_OPS_PORT           = null
-    WEBHOOK_URL_PREFIX         = var.enable_webhook ? "hooks" : null
-    WEBHOOK_HTTP_METHOD        = var.enable_webhook ? "PATCH" : null
+  env = merge({
+    DOCKER_NETWORK    = var.network
+    DOMAIN            = var.domain
+    APP_DIR           = var.appdir
+    APP_PORT          = coalesce(var.port, "8080")
+    APP_IMAGE_NAME    = try(split(":", var.image)[0], "nginx")
+    APP_IMAGE_TAG     = try(split(":", var.image)[1], "latest")
+    LETSENCRYPT_EMAIL = var.email
+    LETSENCRYPT_SERVER = lookup(
+      local.letsencrypt,
+      var.letsencrypt_server,
+      local.letsencrypt.staging
+    )
+    TRAEFIK_ENABLED   = true
+    TRAEFIK_IMAGE_TAG = "2.4"
+    TRAEFIK_OPS_PORT  = "9000"
+    WEBHOOK_ENABLED   = var.webhook_enabled
   }, var.env)
-}
 
-/* ========================================================================== */
-/* DOCKER COMPOSE FILE(S)                                                     */
-/* ========================================================================== */
+  # Service Configuration --------------------------------------------------------
 
-locals {
-  template_dir = "${path.module}/templates"
-  file_regex   = "(?P<filename>docker-compose(?:\\.(?P<name>.*?))?\\.ya?ml)"
+  compose_services = merge(
 
-  # Merge the container definition provided by the user with the default template.
-  # The resulting object should match the schema expected by Docker Compose.
-
-  docker_compose_template_yaml = file("${local.template_dir}/docker-compose.default.yaml")
-  docker_compose_template      = yamldecode(local.docker_compose_template_yaml)
-
-  docker_compose = {
-    version = "3.3"
-    services = {
-      app = merge(local.docker_compose_template.services.app, local.container, {
-        for key, val in local.docker_compose_template.services.app : key =>
-        can(tolist(val)) && contains(keys(local.container), key)
-        ? try(setunion(val, lookup(local.container, key, [])), val)
-        : lookup(local.container, key, val)
-      })
-    }
-    networks = {
-      default = {
-        external = {
-          name = "$${DOCKER_NETWORK}"
-        }
+    // get default services
+    {
+      app = {
+        container_name = "app"
+        image          = coalesce(var.image, "$${APP_IMAGE_NAME}:$${APP_IMAGE_TAG:-latest}")
+        restart        = "always"
+        labels = [
+          "traefik.http.routers.app.rule=Host(`${var.domain}`)",
+          "traefik.http.services.app.loadbalancer.server.port=$${APP_PORT}"
+        ]
       }
-    }
-  }
+    },
+    lookup(yamldecode(file("${local.tmpdir}/docker-compose.webhook.yaml")), "services", {}),
+    lookup(yamldecode(file("${local.tmpdir}/docker-compose.traefik.yaml")), "services", {}),
 
-  docker_compose_yaml = yamlencode(local.docker_compose)
-}
-
-/* ========================================================================== */
-/* CLOUD-INIT CONFIG                                                          */
-/* ========================================================================== */
-
-// Collate all files to be copied to the server on start-up
-
-locals {
-  files = concat(
-    [
-      {
-        filename = ".env"
-        content  = base64encode(join("\n", [for k, v in local.environment : "${k}=${v}" if v != null]))
-      },
-      {
-        filename = "docker-compose.traefik.yaml"
-        content  = filebase64("${local.template_dir}/docker-compose.traefik.yaml")
-      },
-    ],
-
-    # Configuration and scripts relating to the webhook service and its endpoints (only if enabled).
-    var.enable_webhook ? [
-      { filename = "docker-compose.webhook.yaml"
-      content = filebase64("${local.template_dir}/docker-compose.webhook.yaml") },
-      {
-        filename = ".webhook/hooks.json"
-        content  = filebase64("${local.template_dir}/webook/hooks.json")
-      },
-      {
-        filename = ".webhook/update-env.sh"
-        content  = filebase64("${local.template_dir}/webook/update-env.sh")
-      }
-    ] : [],
-
-    # User-provided docker-compose*.yaml files.
-    # If no docker-compose.yaml files are present, one will be generated
-    # automatically using the default template and merged with the values specified
-    # in `var.container`.
-    coalescelist(
-      [for f in var.files : f if can(regex(local.file_regex, f.filename))],
-      [{ filename = "docker-compose.yaml", content = base64encode(local.docker_compose_yaml) }]
-    ),
-
-    # Other user files
-    [for f in var.files : f if !can(regex(local.file_regex, f.filename))]
+    // find user services from docker-compose.* files and/or input variable
+    merge(
+      concat(
+        [for fn, cfg in local.user_compose_files : lookup(cfg, "services", {})],
+        [var.services]
+      )
+    ...)
   )
 
-  # From the list above, identify all docker-compose*.yaml files.
-  # This list will be used to generate separate systemd unit files for each service.
-  docker_compose_files = [
-    for f in local.files : merge(regex(local.file_regex, f.filename), f)
-    if can(regex(local.file_regex, f.filename))
-  ]
+  # Docker Compose File ----------------------------------------------------------
+
+  # pattern to get the rightmost number after ':'
+  port_re = "^(?:(?:\\d+)?:)?(\\d+)$"
+
+  compose_config = {
+    version = 3.3
+    services = {
+      for name, svc in local.compose_services : name => merge(svc, {
+        env_file = [".env"] # ensure this is added to every service
+        labels = concat(
+          lookup(svc, "labels", []),
+          compact([
+            "traefik.enable=true",
+            # configure traefik port if only 1 port is defined and a label
+            # doesn't already exist
+            length(lookup(svc, "ports", [])) == 1
+            && !anytrue([for label in lookup(svc, "labels", []) :
+              length(regexall("loadbalancer\\.server\\.port", label)) > 0
+            ])
+            ? "traefik.http.services.${name}.loadbalancer.server.port=${
+              try(regex(local.port_re, svc.ports[0])[0], svc.ports[0])
+            }" : ""
+          ]),
+        )
+      })
+    }
+    volumes = merge([
+      for fn, cfg in local.user_compose_files : lookup(cfg, "volumes", {})
+    ]...)
+    networks = merge(
+      { default = { external = { name = "$${DOCKER_NETWORK:-${var.network}}" } } },
+      [for fn, cfg in local.user_compose_files : lookup(cfg, "networks", {})]...
+    )
+  }
+
+  # Files / Assets ---------------------------------------------------------------
+
+  tmpdir     = "${path.module}/templates"
+  sysd       = "/etc/systemd/system"
+  compose_re = "docker-compose(?:\\.(.+))?\\.ya?ml"
+
+  user_compose_files = {
+    for fn, c in var.files : fn => yamldecode(base64decode(c))
+    if length(regexall(local.compose_re, fn)) > 0
+  }
+
+  files = merge(
+    {
+      "${local.sysd}/app.service"            = filebase64("${local.tmpdir}/app.service")
+      "${local.sysd}/config-monitor.service" = filebase64("${local.tmpdir}/config-monitor.service")
+      "${local.sysd}/config-monitor.path"    = filebase64("${local.tmpdir}/config-monitor.path")
+
+      "$docker-compose.yaml"   = base64encode(yamlencode(local.compose_config))
+      ".webhook/hooks.json"    = filebase64("${local.tmpdir}/webook/hooks.json")
+      ".webhook/update-env.sh" = filebase64("${local.tmpdir}/webook/update-env.sh")
+      ".env" = base64encode(
+        join("\n", [for k, v in local.env : "${k}=${v}"])
+      )
+    }, var.files
+  )
 }
 
-// Generate cloud-init config
+# Cloud-Init Config ------------------------------------------------------------
+
+locals {
+  cloudinit = {
+    write_files = [for filename, content in local.files : {
+      path        = "${var.appdir}/${filename}"
+      permissions = substr(filename, -2, 2) == "sh" ? "0755" : "0644"
+      content     = content
+      encoding    = "b64"
+    }]
+    runcmd = [<<-EOT
+      which docker > /dev/null 2>&1 || curl -fsSL https://get.docker.com | sh
+      [ $(docker network list -q --filter=name=${var.network}) ] ||
+        docker network create ${var.network}
+      systemctl daemon-reload
+      systemctl enable --now app config-monitor
+    EOT
+    ]
+  }
+}
 
 data "cloudinit_config" "config" {
   gzip          = false
   base64_encode = false
 
   part {
+    merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
+    content_type = "text/cloud-config"
+    content      = "#cloud-config\n${yamlencode(var.cloudinit_extra)}"
+  }
+
+  part {
     filename     = "cloud-init.yaml"
     merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
     content_type = "text/cloud-config"
-    content = templatefile("${local.template_dir}/cloud-config.yaml", {
-      files                = local.files
-      docker_compose_files = local.docker_compose_files
-    })
-  }
-
-  # Add any additional cloud-init configuration or scripts provided by the user
-  dynamic "part" {
-    for_each = var.cloudinit_part
-    content {
-      merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
-      content_type = part.value.content_type
-      content      = part.value.content
-    }
+    content      = "#cloud-config\n${yamlencode(local.cloudinit)}"
   }
 }

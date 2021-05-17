@@ -1,22 +1,8 @@
-version: "3.3"
-
+version: 3.3
 services:
   app:
-    restart: unless-stopped
-    image: "${IMAGE_NAME}:${IMAGE_TAG:-latest}"
-    env_file:
-      - .env
-    container_name: "${CONTAINER_NAME}"
-    command: "${CONTAINER_COMMAND}"
+    image: ${IMAGE_NAME}:${IMAGE_TAG:-latest}
+    env_file: [".env"]
     labels:
-      - "traefik.enable=${TRAEFIK_ENABLE:-true}"
-      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.app.entrypoints=websecure"
-      - "traefik.http.routers.app.tls=true"
-      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
-    logging:
-      driver: ${DOCKER_LOG_DRIVER:-json-file}
-networks:
-  default:
-    external:
-      name: "${DOCKER_NETWORK:-web}"
+      - traefik.enable=true
+      - traefik.http.routers.app.rule=Host(`${DOMAIN}`)

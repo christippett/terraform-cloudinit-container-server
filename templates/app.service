@@ -1,0 +1,27 @@
+[Unit]
+Description=Docker Compose app
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/app
+EnvironmentFile=/var/app/.env
+ExecStartPre=-/usr/bin/docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /var/app:/var/app \
+  -w /var/app \
+  docker/compose:latest -f docker-compose.yaml rm -f
+ExecStart=/usr/bin/docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /var/app:/var/app \
+  -w /var/app \
+  docker/compose:latest -f docker-compose.yaml up
+ExecStop=/usr/bin/docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /var/app:/var/app \
+  -w /var/app \
+  docker/compose:latest -f docker-compose.yaml stop -t 15
+
+[Install]
+WantedBy=multi-user.target

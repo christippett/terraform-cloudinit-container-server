@@ -1,26 +1,25 @@
-version: "3"
-
+version: 3
 services:
   webhook:
     restart: unless-stopped
     image: almir/webhook
     container_name: webhook
     command:
-      - "-verbose"
-      - "-port=${TRAEFIK_OPS_PORT-9000}"
-      - "-hooks=/app/.webhook/hooks.json"
-      - "-urlprefix=${WEBHOOK_URL_PREFIX:-hooks}"
-      - "-http-methods=${WEBHOOK_HTTP_METHOD:-PATCH}"
-      - "-hotreload"
+      - -verbose
+      - -port=${TRAEFIK_OPS_PORT-9000}
+      - -hooks=/app/.webhook/hooks.json
+      - -urlprefix=webook
+      - -http-methods=PATCH
+      - -hotreload
     volumes:
-      - "./:/app"
+      - ./:/app
     ports:
-      - "${TRAEFIK_OPS_PORT-9000}"
+      - ${TRAEFIK_OPS_PORT-9000}
     labels:
-      - "traefik.http.routers.webhook.rule=Host(`${DOMAIN}`) && PathPrefix(`/${WEBHOOK_URL_PREFIX:-hooks}`)"
-      - "traefik.http.routers.webhook.entrypoints=ops"
-      - "traefik.http.routers.webhook.tls.certresolver=letsencrypt"
+      - traefik.enable=${WEBHOOK_ENABLED-false}
+      - traefik.http.routers.webhook.rule=Host(`${DOMAIN}`) && PathPrefix(`/webook`)
+      - traefik.http.routers.webhook.entrypoints=admin
 networks:
   default:
     external:
-      name: web
+      name: ${DOCKER_NETWORK}

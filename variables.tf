@@ -10,50 +10,63 @@ variable "email" {
   type        = string
 }
 
-variable "letsencrypt_staging" {
-  description = "Boolean flag to decide whether the Let's Encrypt staging server should be used."
-  type        = bool
-  default     = false
+variable "image" {
+  description = "Rapidly deploy a service by specifying only a Docker image."
+  type        = string
+  default     = ""
 }
 
-variable "files" {
-  description = "User files to be copied to the application's working directory (`/var/app`). The file's content must be provided to Terraform as a base64 encoded string."
-  type        = list(object({ filename : string, content : string }))
-  default     = []
+variable "port" {
+  description = "Default port exposed by the application container."
+  type        = string
+  default     = ""
 }
 
-variable "env" {
-  description = "List of environment variables (KEY=VAL) to be made available within the application container and also Docker Compose (useful for overriding configuration options)."
-  type        = map(string)
-  default     = {}
+variable "network" {
+  description = "Default network name used by Traefik to identify services."
+  type        = string
+  default     = "traefik"
 }
 
-variable "container" {
-  description = "Object containing the definition of the container to deploy. The key and values from this object are interpolated directly into the Docker Compose file used to run your application, refer to the Docker Compose documentation for more information."
+
+variable "services" {
+  description = "Map containing a service definition and having the same schema as expected by Docker Compose (https://docs.docker.com/compose/compose-file/compose-file-v3/#service-configuration-reference)."
   type        = any
   default     = {}
 }
 
-variable "cloudinit_part" {
-  description = "Additional cloud-init configuration used to setup and/or customise the instance beyond the defaults provided by this module."
-  type        = list(object({ content_type : string, content : string }))
-  default     = []
+variable "env" {
+  description = "List of environment variables (KEY=VAL) to be made available within running containers and also Docker Compose configuration files."
+  type        = map(string)
+  default     = {}
 }
 
-variable "enable_webhook" {
-  description = "Enabling this feature will expose an endpoint (`/hooks/update-env`) on the server allowing updates to be made to the application's environment variables via a PATCH request. The webhook service will trigger Docker Compose to pull the latest version of the application's container image and restart the service."
+variable "files" {
+  description = "Map of filenames and their base64 encoded content to be copied to the application's working directory (`/var/app`)."
+  type        = map(string)
+  default     = {}
+}
+
+variable "cloudinit_extra" {
+  description = "Additional cloud-init configuration for setting up or customising the instance beyond the defaults provided by this module."
+  type        = any
+  default     = {}
+}
+
+variable "letsencrypt_server" {
+  description = "Configure which Let's Encrypt server to use, either 'prod' or 'staging' (default)."
+  type        = string
+  default     = "staging"
+}
+
+variable "webhook_enabled" {
+  description = "Enabling this feature will expose an endpoint (`/webhook/update-env`) on the server allowing updates to be made to the application's environment variables via a HTTP PATCH request. Updates will trigger the application to be restarted and the latest image to be pulled."
   type        = bool
   default     = false
 }
 
-variable "docker_compose_image" {
-  description = "Docker image used to run Docker Compose commands. (default: docker/compose)"
+variable "appdir" {
+  description = "Working directory on the remote instance where the application will be run."
   type        = string
-  default     = "docker/compose"
-}
-
-variable "docker_compose_tag" {
-  description = "Tagged version of Docker Compose to use. (default: latest)"
-  type        = string
-  default     = "latest"
+  default     = "/var/app"
 }

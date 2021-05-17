@@ -1,0 +1,16 @@
+[Unit]
+Description=Restart app on config changes
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/app
+EnvironmentFile=/var/app/.env
+ExecStartPre=-/usr/bin/docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /var/app:/var/app \
+  -w=/var/app \
+  docker/compose:latest pull --ignore-pull-failures
+ExecStart=/usr/bin/systemctl restart app.service
+
+[Install]
+WantedBy=multi-user.target
