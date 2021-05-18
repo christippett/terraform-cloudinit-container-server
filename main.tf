@@ -2,139 +2,95 @@ locals {
 
   # Environment Variables --------------------------------------------------------
 
-  letsencrypt = {
+  ca = {
     prod    = "https://acme-v02.api.letsencrypt.orgdirectory"
     staging = "https://acme-staging-v02.api.letsencrypt.org/directory"
   }
+  ca_server  = lookup(local.ca, var.ca_server, local.ca.staging)
+  acme_email = coalesce(var.acme_email, "acme@${var.domain}")
+
 
   env = merge({
-    DOCKER_NETWORK    = var.network
-    DOMAIN            = var.domain
-    APP_DIR           = var.appdir
-    APP_PORT          = coalesce(var.port, "8080")
-    APP_IMAGE_NAME    = try(split(":", var.image)[0], "nginx")
-    APP_IMAGE_TAG     = try(split(":", var.image)[1], "latest")
-    LETSENCRYPT_EMAIL = var.email
-    LETSENCRYPT_SERVER = lookup(
-      local.letsencrypt,
-      var.letsencrypt_server,
-      local.letsencrypt.staging
-    )
-    TRAEFIK_ENABLED   = true
-    TRAEFIK_IMAGE_TAG = "2.4"
-    TRAEFIK_OPS_PORT  = "9000"
-    WEBHOOK_ENABLED   = var.webhook_enabled
+    DOMAIN    = var.domain
+    PORT      = "80"
+    IMAGE     = try(split(":", var.image)[0], "traefik/whoami")
+    IMAGE_TAG = try(split(":", var.image)[1], "latest")
+
+    TRAEFIK_VERSION                                         = "2.4"
+    TRAEFIK_PROVIDERS_DOCKER_NETWORK                        = "app_default"
+    TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_EMAIL    = local.acme_email
+    TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_CASERVER = local.ca_server
   }, var.env)
 
-  # Service Configuration --------------------------------------------------------
+  # Docker Compose ---------------------------------------------------------------
 
-  compose_services = merge(
-
-    // get default services
-    {
-      app = {
-        container_name = "app"
-        image          = coalesce(var.image, "$${APP_IMAGE_NAME}:$${APP_IMAGE_TAG:-latest}")
-        restart        = "always"
-        labels = [
-          "traefik.http.routers.app.rule=Host(`${var.domain}`)",
-          "traefik.http.services.app.loadbalancer.server.port=$${APP_PORT}"
-        ]
-      }
-    },
-    lookup(yamldecode(file("${local.tmpdir}/docker-compose.webhook.yaml")), "services", {}),
-    lookup(yamldecode(file("${local.tmpdir}/docker-compose.traefik.yaml")), "services", {}),
-
-    // find user services from docker-compose.* files and/or input variable
-    merge(
-      concat(
-        [for fn, cfg in local.user_compose_files : lookup(cfg, "services", {})],
-        [var.services]
-      )
-    ...)
-  )
-
-  # Docker Compose File ----------------------------------------------------------
-
-  # pattern to get the rightmost number after ':'
-  port_re = "^(?:(?:\\d+)?:)?(\\d+)$"
+  tmpldir = "${path.module}/templates"
 
   compose_config = {
-    version = 3.3
-    services = {
-      for name, svc in local.compose_services : name => merge(svc, {
-        env_file = [".env"] # ensure this is added to every service
-        labels = concat(
-          lookup(svc, "labels", []),
-          compact([
-            "traefik.enable=true",
-            # configure traefik port if only 1 port is defined and a label
-            # doesn't already exist
-            length(lookup(svc, "ports", [])) == 1
-            && !anytrue([for label in lookup(svc, "labels", []) :
-              length(regexall("loadbalancer\\.server\\.port", label)) > 0
-            ])
-            ? "traefik.http.services.${name}.loadbalancer.server.port=${
-              try(regex(local.port_re, svc.ports[0])[0], svc.ports[0])
-            }" : ""
-          ]),
-        )
-      })
-    }
-    volumes = merge([
-      for fn, cfg in local.user_compose_files : lookup(cfg, "volumes", {})
-    ]...)
-    networks = merge(
-      { default = { external = { name = "$${DOCKER_NETWORK:-${var.network}}" } } },
-      [for fn, cfg in local.user_compose_files : lookup(cfg, "networks", {})]...
+    version = "3"
+    services = merge(
+      yamldecode(file("${local.tmpldir}/compose/docker-compose.traefik.yaml")).services,
+      yamldecode(file("${local.tmpldir}/compose/docker-compose.default.yaml")).services,
+      { for name, s in var.services : name => merge({
+        env_file = [".env"]
+        labels = [
+          "traefik.enable=true",
+          "traefik.http.routers.${name}.entrypoints=https",
+          "traefik.http.routers.${name}.rule=Host(`${lookup(s, "domainname", "${name}.$${DOMAIN}")}`)"
+        ] }, s)
+      }
     )
   }
 
-  # Files / Assets ---------------------------------------------------------------
+  # Cloud-Init Config ------------------------------------------------------------
 
-  tmpdir     = "${path.module}/templates"
-  sysd       = "/etc/systemd/system"
-  compose_re = "docker-compose(?:\\.(.+))?\\.ya?ml"
-
-  user_compose_files = {
-    for fn, c in var.files : fn => yamldecode(base64decode(c))
-    if length(regexall(local.compose_re, fn)) > 0
-  }
-
-  files = merge(
-    {
-      "${local.sysd}/app.service"            = filebase64("${local.tmpdir}/app.service")
-      "${local.sysd}/config-monitor.service" = filebase64("${local.tmpdir}/config-monitor.service")
-      "${local.sysd}/config-monitor.path"    = filebase64("${local.tmpdir}/config-monitor.path")
-
-      "$docker-compose.yaml"   = base64encode(yamlencode(local.compose_config))
-      ".webhook/hooks.json"    = filebase64("${local.tmpdir}/webook/hooks.json")
-      ".webhook/update-env.sh" = filebase64("${local.tmpdir}/webook/update-env.sh")
-      ".env" = base64encode(
-        join("\n", [for k, v in local.env : "${k}=${v}"])
-      )
-    }, var.files
-  )
-}
-
-# Cloud-Init Config ------------------------------------------------------------
-
-locals {
   cloudinit = {
-    write_files = [for filename, content in local.files : {
-      path        = "${var.appdir}/${filename}"
-      permissions = substr(filename, -2, 2) == "sh" ? "0755" : "0644"
-      content     = content
-      encoding    = "b64"
-    }]
     runcmd = [<<-EOT
+      echo "🐳 Installing Docker"
       which docker > /dev/null 2>&1 || curl -fsSL https://get.docker.com | sh
-      [ $(docker network list -q --filter=name=${var.network}) ] ||
-        docker network create ${var.network}
+      EOT
+      , <<-EOT
+      echo "🚀 Starting application(s)"
       systemctl daemon-reload
       systemctl enable --now app config-monitor
-    EOT
+      EOT
     ]
+
+    write_files = flatten([
+      {
+        path     = "/var/app/.env"
+        encoding = "b64"
+        content  = base64encode(join("\n", [for k, v in local.env : "${k}=${v}"]))
+      },
+      {
+        path     = "/var/app/traefik/traefik.yaml"
+        encoding = "b64"
+        content  = filebase64("${local.tmpldir}/traefik/traefik.yaml")
+      },
+      {
+        path        = "/var/app/compose.sh"
+        encoding    = "b64"
+        permissions = "0755"
+        content     = filebase64("${local.tmpldir}/compose.sh")
+      },
+      {
+        path     = "/var/app/docker-compose.yaml"
+        encoding = "b64"
+        content  = base64encode(yamlencode(local.compose_config))
+      },
+      [for fp in fileset(local.tmpldir, "systemd/*") : {
+        path     = "/etc/systemd/system/${basename(fp)}"
+        encoding = "b64"
+        content  = filebase64("${local.tmpldir}/${fp}")
+      }],
+      [for fp, content in var.files : {
+        path        = "/var/app/${fp}"
+        owner       = "app:users"
+        permissions = substr(fp, -2, 2) == "sh" ? "0755" : "0644"
+        encoding    = "b64"
+        content     = base64encode(content)
+      }]
+    ])
   }
 }
 
@@ -143,15 +99,15 @@ data "cloudinit_config" "config" {
   base64_encode = false
 
   part {
-    merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
+    filename     = "init.cfg"
+    content      = "#cloud-config\n${yamlencode(local.cloudinit)}"
     content_type = "text/cloud-config"
-    content      = "#cloud-config\n${yamlencode(var.cloudinit_extra)}"
+    merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
   }
 
   part {
-    filename     = "cloud-init.yaml"
-    merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
+    content      = "#cloud-config\n${yamlencode(var.cloud_config)}"
     content_type = "text/cloud-config"
-    content      = "#cloud-config\n${yamlencode(local.cloudinit)}"
+    merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
   }
 }

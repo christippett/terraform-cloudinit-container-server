@@ -1,6 +1,6 @@
 [Unit]
 Description=Restart app on config changes
-After=app-default.service
+After=app.service
 
 [Path]
 PathChanged=/var/app/.env

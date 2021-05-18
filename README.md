@@ -152,7 +152,7 @@ networks:
 - 🔗 Traefik connects to services over the `web` Docker network by default — all service(s) you want exposed need to be on this network.
 - 🔒 Let's Encrypt is configured to use the `letsencrypt` certificate resolver from Traefik. Refer to the example `docker-compose.yaml` file above for the labels needed to enable and configure this feature.
 - 📋 Almost all configuration options end up as environment variables defined in a `.env` file saved to the virtual machine. These values are read by Docker Compose on start-up and can be used to parameterise your Docker Compose file without impacting its use in other environments (such as running `docker-compose` locally).
-- 📊 The module provides an option for enabling Traefik's [monitoring dashboard](https://docs.traefik.io/operations/dashboard/) and API. When enabled, the dashboard is accessible from `https://${domain}:9000/dashboard/` and the API from `https://${domain}:9000/api/`. The port used by Traefik can be customised using the `TRAEFIK_OPS_PORT` environment variable.
+- 📊 The module provides an option for enabling Traefik's [monitoring dashboard](https://docs.traefik.io/operations/dashboard/) and API. When enabled, the dashboard is accessible from `https://${domain}:9000/dashboard/` and the API from `https://${domain}:9000/api/`. The port used by Traefik can be customised using the `TRAEFIK_ADMIN_PORT` environment variable.
 
 # Example integrations with AWS, Google Cloud, Azure and DigitalOcean
 

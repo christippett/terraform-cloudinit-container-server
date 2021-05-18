@@ -1,0 +1,16 @@
+version: "3"
+services:
+  app:
+    container_name: app
+    restart: "always"
+    image: "${IMAGE}:${IMAGE_TAG:-latest}"
+    expose:
+      - ${PORT}
+    env_file:
+      - ".env"
+    volumes:
+      - "/var/app:/app"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.entrypoints=https"
+      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"

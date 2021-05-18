@@ -1,0 +1,28 @@
+log:
+  level: DEBUG
+  format: json
+api:
+  dashboard: true
+providers:
+  docker:
+    exposedByDefault: true
+entryPoints:
+  http:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: https
+          scheme: https
+          permanent: true
+  https:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      storage: /etc/traefik/.certificates/acme.json
+      httpChallenge:
+        entrypoint: http

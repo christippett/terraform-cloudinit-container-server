@@ -1,8 +1,0 @@
-version: 3.3
-services:
-  app:
-    image: ${IMAGE_NAME}:${IMAGE_TAG:-latest}
-    env_file: [".env"]
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.app.rule=Host(`${DOMAIN}`)
