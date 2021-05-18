@@ -9,10 +9,9 @@ locals {
   ca_server  = lookup(local.ca, var.ca_server, local.ca.staging)
   acme_email = coalesce(var.acme_email, "acme@${var.domain}")
 
-
   env = merge({
     DOMAIN    = var.domain
-    PORT      = "80"
+    PORT      = var.port
     IMAGE     = try(split(":", var.image)[0], "traefik/whoami")
     IMAGE_TAG = try(split(":", var.image)[1], "latest")
 
@@ -36,6 +35,7 @@ locals {
         labels = [
           "traefik.enable=true",
           "traefik.http.routers.${name}.entrypoints=https",
+          "traefik.http.routers.${name}.tls.certresolver=letsencrypt",
           "traefik.http.routers.${name}.rule=Host(`${lookup(s, "domainname", "${name}.$${DOMAIN}")}`)"
         ] }, s)
       }

@@ -13,4 +13,5 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.entrypoints=https"
+      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
       - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
