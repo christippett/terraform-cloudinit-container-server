@@ -7,7 +7,7 @@ output "environment" {
   value = local.env
 }
 
-output "docker_compose_config" {
+output "compose_config" {
   description = "Docker Compose service config."
   value       = local.compose_config
 }

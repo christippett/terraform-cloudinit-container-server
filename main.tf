@@ -1,42 +1,42 @@
 locals {
 
-  # Environment Variables --------------------------------------------------------
+  tmpldir = "${path.module}/templates"
 
   ca = {
     prod    = "https://acme-v02.api.letsencrypt.orgdirectory"
     staging = "https://acme-staging-v02.api.letsencrypt.org/directory"
   }
-  ca_server  = lookup(local.ca, var.ca_server, local.ca.staging)
-  acme_email = coalesce(var.acme_email, "acme@${var.domain}")
+  ca_server  = lookup(local.ca, var.config.ca_server, local.ca.staging)
+  acme_email = coalesce(var.config.acme_email, "acme@${var.config.domain}")
+
+  # Environment Variables --------------------------------------------------------
 
   env = merge({
-    DOMAIN    = var.domain
-    PORT      = var.port
-    IMAGE     = try(split(":", var.image)[0], "traefik/whoami")
-    IMAGE_TAG = try(split(":", var.image)[1], "latest")
+    DOMAIN = var.config.domain
 
     TRAEFIK_VERSION                                         = "2.4"
     TRAEFIK_PROVIDERS_DOCKER_NETWORK                        = "app_default"
     TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_EMAIL    = local.acme_email
     TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_CASERVER = local.ca_server
-  }, var.env)
+  }, var.environment)
 
   # Docker Compose ---------------------------------------------------------------
-
-  tmpldir = "${path.module}/templates"
 
   compose_config = {
     version = "3"
     services = merge(
       yamldecode(file("${local.tmpldir}/compose/docker-compose.traefik.yaml")).services,
-      yamldecode(file("${local.tmpldir}/compose/docker-compose.default.yaml")).services,
       { for name, s in var.services : name => merge({
+        restart  = "always"
+        volumes  = ["/var/app:/app"]
         env_file = [".env"]
         labels = [
           "traefik.enable=true",
           "traefik.http.routers.${name}.entrypoints=https",
           "traefik.http.routers.${name}.tls.certresolver=letsencrypt",
-          "traefik.http.routers.${name}.rule=Host(`${lookup(s, "domainname", "${name}.$${DOMAIN}")}`)"
+          "traefik.http.routers.${name}.rule=Host(`${lookup(s, "domainname",
+            index(keys(var.services), name) == 0 ? var.config.domain : "${name}.${var.config.domain}")
+          }`)"
         ] }, s)
       }
     )
@@ -49,6 +49,7 @@ locals {
       echo "🐳 Installing Docker"
       which docker > /dev/null 2>&1 || curl -fsSL https://get.docker.com | sh
       EOT
+
       , <<-EOT
       echo "🚀 Starting application(s)"
       systemctl daemon-reload
@@ -82,13 +83,6 @@ locals {
         path     = "/etc/systemd/system/${basename(fp)}"
         encoding = "b64"
         content  = filebase64("${local.tmpldir}/${fp}")
-      }],
-      [for fp, content in var.files : {
-        path        = "/var/app/${fp}"
-        owner       = "app:users"
-        permissions = substr(fp, -2, 2) == "sh" ? "0755" : "0644"
-        encoding    = "b64"
-        content     = base64encode(content)
       }]
     ])
   }
@@ -106,7 +100,7 @@ data "cloudinit_config" "config" {
   }
 
   part {
-    content      = "#cloud-config\n${yamlencode(var.cloud_config)}"
+    content      = "#cloud-config\n${yamlencode(var.cloudinit)}"
     content_type = "text/cloud-config"
     merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
   }
