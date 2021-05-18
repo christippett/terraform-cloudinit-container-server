@@ -73,17 +73,15 @@ parse_params() {
     compose up --remove-orphans
     ;;
   stop)
-    print_cmd "rm -fsv"
+    print_cmd "rm -fs"
     msg "🧨 ${WHITE}${B}Stopping...${X}"
-    compose rm -fsv
+    compose rm -fs
     ;;
   restart)
-    print_cmd "rm -fsv" "pull -q --ignore-pull-failures --include-deps" "up --remove-orphans"
+    print_cmd "rm -fs" "pull --ignore-pull-failures --include-deps" "up --remove-orphans"
     msg "💥 ${WHITE}${B}Restarting...${X}"
     compose rm -fs
-    compose pull -q \
-      --ignore-pull-failures \
-      --include-deps
+    compose pull --ignore-pull-failures --include-deps
     compose up --remove-orphans
     ;;
   help)
