@@ -2,19 +2,23 @@
 variable "image" {
   description = "Docker image."
   type        = string
-  default     = ""
+  default     = "traefik/whoami"
+}
+
+variable "port" {
+  description = "Container exposed port."
+  type        = number
+  default     = 8080
 }
 
 variable "domain" {
   description = "Server domain."
   type        = string
-  default     = ""
 }
 
 variable "acme_email" {
   description = "Email used for Let's Encrypt certificate registration."
   type        = string
-  default     = null
 }
 
 variable "services" {
