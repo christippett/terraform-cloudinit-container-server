@@ -1,0 +1,5 @@
+[Path]
+PathChanged=/var/app
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,12 @@
+[Unit]
+Description=Restart Docker Compose
+Requires=app.service
+After=app.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl restart app.service
+
+[Install]
+WantedBy=multi-user.target
+

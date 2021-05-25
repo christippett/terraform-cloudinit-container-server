@@ -7,6 +7,7 @@ dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
 compose() {
   /usr/bin/docker run --rm \
+    --name "compose-$(date +%s)" \
     -w "${dir}" \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${dir}:${dir}" \
@@ -38,16 +39,41 @@ EOF
   exit
 }
 
-cleanup() {
-  trap - SIGINT SIGTERM ERR EXIT
+parse_params() {
+  if [ -z "$*" ]; then
+    usage
+  fi
+
+  case "$1" in
+  start)
+    print_cmd "up"
+    msg "🚀 ${WHITE}${B}Starting...${X}"
+    compose up
+    ;;
+  stop)
+    print_cmd "rm -fs"
+    msg "🧨 ${WHITE}${B}Stopping...${X}"
+    composerm -fs
+    ;;
+  restart)
+    print_cmd "rm -fs" "pull --ignore-pull-failures --include-deps" "up"
+    msg "💥 ${WHITE}${B}Restarting...${X}"
+    compose rm -fs
+    compose pull --ignore-pull-failures --include-deps
+    compose up
+    ;;
+  help)
+    usage
+    ;;
+  *)
+    print_cmd "$*"
+    compose "$@"
+    ;;
+  esac
 }
 
-setup_colors() {
-  if [[ -t 2 ]] && [[ -z "${NO_COLOR-}" ]] && [[ "${TERM-}" != "dumb" ]]; then
-    X='\033[0;0m' B='\033[1m' WHITE='\033[37m' ORANGE='\033[0;33m' BLUE='\033[1;36m' BLACK='\033[1;30m'
-  else
-    X='' B='' WHITE='' ORANGE='' BLUE='' BLACK=''
-  fi
+cleanup() {
+  trap - SIGINT SIGTERM ERR EXIT
 }
 
 msg() {
@@ -61,37 +87,12 @@ print_cmd() {
   msg "${BLACK}⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺${X}"
 }
 
-parse_params() {
-  if [ -z "$*" ]; then
-    usage
+setup_colors() {
+  if [[ -t 2 ]] && [[ -z "${NO_COLOR-}" ]] && [[ "${TERM-}" != "dumb" ]]; then
+    X='\033[0;0m' B='\033[1m' WHITE='\033[37m' ORANGE='\033[0;33m' BLUE='\033[1;36m' BLACK='\033[1;30m'
+  else
+    X='' B='' WHITE='' ORANGE='' BLUE='' BLACK=''
   fi
-
-  case "$@" in
-  start)
-    print_cmd "up --remove-orphans"
-    msg "🚀 ${WHITE}${B}Starting...${X}"
-    compose up --remove-orphans
-    ;;
-  stop)
-    print_cmd "rm -fs"
-    msg "🧨 ${WHITE}${B}Stopping...${X}"
-    compose rm -fs
-    ;;
-  restart)
-    print_cmd "rm -fs" "pull --ignore-pull-failures --include-deps" "up --remove-orphans"
-    msg "💥 ${WHITE}${B}Restarting...${X}"
-    compose rm -fs
-    compose pull --ignore-pull-failures --include-deps
-    compose up --remove-orphans
-    ;;
-  help)
-    usage
-    ;;
-  *)
-    print_cmd "$*"
-    compose "$@"
-    ;;
-  esac
 }
 
 setup_colors

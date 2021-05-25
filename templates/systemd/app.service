@@ -1,13 +1,13 @@
 [Unit]
-Description=Docker Compose app
+Description=Docker Compose Application
 Requires=docker.service
 After=docker.service
 
 [Service]
 Type=simple
-ExecStartPre=-/var/app/compose.sh kill
-ExecStart=/var/app/compose.sh start
-ExecStop=/var/app/compose.sh stop
+WorkingDirectory=/var/app
+ExecStart=/var/app/run.sh start
+ExecStop=/var/app/run.sh stop
 
 [Install]
 WantedBy=multi-user.target
