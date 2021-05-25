@@ -53,7 +53,7 @@ parse_params() {
   stop)
     print_cmd "rm -fs"
     msg "🧨 ${WHITE}${B}Stopping...${X}"
-    composerm -fs
+    compose rm -fs
     ;;
   restart)
     print_cmd "rm -fs" "pull --ignore-pull-failures --include-deps" "up"

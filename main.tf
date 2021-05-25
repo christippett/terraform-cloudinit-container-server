@@ -5,7 +5,7 @@ resource "random_password" "traefik_admin" {
 
 locals {
   letsencrypt_servers = {
-    prod    = "https://acme-v02.api.letsencrypt.orgdirectory"
+    prod    = "https://acme-v02.api.letsencrypt.org/directory"
     staging = "https://acme-staging-v02.api.letsencrypt.org/directory"
   }
 
@@ -39,8 +39,9 @@ locals {
         volumes  = ["/var/app:/app"]
         labels = [
           "traefik.enable=true",
-          "traefik.http.routers.${name}.entrypoints=websecure",
-          "traefik.http.routers.${name}.rule=Host(`${lookup(service, "domainname", "${name}.${var.domain}")}`)"
+          "traefik.http.routers.${name}.rule=Host(`${lookup(service, "domainname", "${name}.${var.domain}")}`)",
+          "traefik.http.routers.${name}.entryPoints=websecure",
+          "traefik.http.routers.${name}.tls=true"
         ]
       }, service)
     })
@@ -53,7 +54,7 @@ locals {
     DOCKER_NETWORK         = "web"
     TRAEFIK_VERSION        = "2.4"
     TRAEFIK_ADMIN_PORT     = 9000
-    TRAEFIK_ADMIN_PASSWORD = replace(bcrypt(local.traefik_admin_password, 6), "$", "$$")
+    TRAEFIK_ADMIN_PASSWORD = bcrypt(local.traefik_admin_password, 6)
     LETSENCRYPT_EMAIL      = var.letsencrypt_email
     LETSENCRYPT_SERVER = lookup(
       local.letsencrypt_servers,

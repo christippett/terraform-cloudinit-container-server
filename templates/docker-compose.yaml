@@ -7,22 +7,24 @@ services:
     command:
       - "--api.dashboard=true"
       - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=true"
+      - "--providers.docker.exposedbydefault=false"
       - '--providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service"}}.${DOMAIN}`)'
       - "--providers.docker.network=${DOCKER_NETWORK:-web}"
       - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      - "--entrypoints.web.http.redirections.entryPoint.permanent=true"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
       - "--entrypoints.admin.address=:${TRAEFIK_ADMIN_PORT:-9000}"
-      - "--entrypoints.admin.http.tls=letsencrypt"
+      - "--entrypoints.admin.http.tls=true"
+      - "--entrypoints.admin.http.tls.certresolver=letsencrypt"
       - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.websecure.http.tls=letsencrypt"
-      - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/traefik/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.caserver=${LETSENCRYPT_SERVER:-https://acme-v02.api.letsencrypt.org/directory}"
+      - "--entrypoints.websecure.http.tls=true"
+      - "--entrypoints.websecure.http.tls.certresolver=letsencrypt"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.caserver=${LETSENCRYPT_SERVER}"
     env_file:
       - ".env"
     ports:
@@ -35,9 +37,10 @@ services:
       - ./traefik/:/etc/traefik/
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.entrypoints=admin"
       - "traefik.http.routers.traefik.rule=Host(`${DOMAIN}`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))"
+      - "traefik.http.routers.traefik.entrypoints=admin"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.middlewares=admin"
       - "traefik.http.middlewares.admin.basicauth.users=admin:${TRAEFIK_ADMIN_PASSWORD}"
 
