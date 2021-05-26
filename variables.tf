@@ -21,6 +21,12 @@ variable "traefik_admin_password" {
   default     = null
 }
 
+variable "traefik_config_dir" {
+  description = "File path on the remote server where Traefik should store and lookup its configuration."
+  type        = string
+  default     = null
+}
+
 variable "services" {
   description = "List of container services to deploy. Refer to the Docker Compose documentation for available options: https://docs.docker.com/compose/compose-file/compose-file-v3/#service-configuration-reference."
   type        = any
@@ -38,8 +44,8 @@ variable "docker_compose_file" {
   default = null
 
   validation {
-    condition = var.docker_compose_file == null || try(fileexists(var.docker_compose_file), false)
-    error_message = "Invalid or missing Docker Compose file."
+    condition = var.docker_compose_file == null || can(yamldecode(var.docker_compose_file))
+    error_message = "Docker Compose file is not valid YAML."
   }
 }
 

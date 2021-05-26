@@ -36,7 +36,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/localtime:/etc/localtime:ro
-      - ./traefik/:/etc/traefik/
+      - ${TRAEFIK_CONFIG_DIR:-./traefik/}:/etc/traefik/
     labels:
       - "traefik.enable=true"
       - "traefik.http.middlewares.admin.basicauth.users=admin:${TRAEFIK_ADMIN_PASSWORD}"

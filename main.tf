@@ -58,6 +58,7 @@ locals {
     TRAEFIK_VERSION        = "2.4"
     TRAEFIK_ADMIN_PORT     = 9000
     TRAEFIK_ADMIN_PASSWORD = bcrypt(local.traefik_admin_password, 6)
+    TRAEFIK_CONFIG_DIR     = var.traefik_config_dir
     LETSENCRYPT_EMAIL      = var.letsencrypt_email
     LETSENCRYPT_SERVER = lookup(
       local.letsencrypt_servers,
@@ -80,7 +81,6 @@ locals {
         docker network create ${local.env.DOCKER_NETWORK}
       fi
       EOT
-
       , <<-EOT
       echo "🚀 Starting application(s)"
       chmod a+x /var/app/run.sh
@@ -101,7 +101,7 @@ locals {
         encoding = "b64"
         content  = (
           length(local.services) > 0 ? base64encode(yamlencode(local.compose_config))
-          : filebase64(var.docker_compose_file)
+          : base64encode(var.docker_compose_file)
         )
       },
       [
