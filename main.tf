@@ -41,7 +41,7 @@ locals {
           "traefik.enable=true",
           "traefik.http.routers.${name}.rule=Host(`${lookup(service, "domainname", "${name}.${var.domain}")}`)",
           "traefik.http.routers.${name}.entryPoints=websecure",
-          "traefik.http.routers.${name}.tls=true"
+          "traefik.http.routers.${name}.tls.certresolver=letsencrypt"
         ]
       }, service)
     })

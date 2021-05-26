@@ -5,6 +5,7 @@ services:
     image: traefik:${TRAEFIK_VERSION:-latest}
     restart: unless-stopped
     command:
+      - "--log.level=DEBUG"
       - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -15,6 +16,7 @@ services:
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
       - "--entrypoints.admin.address=:${TRAEFIK_ADMIN_PORT:-9000}"
+      - "--entrypoints.admin.http.middlewares=admin"
       - "--entrypoints.admin.http.tls=true"
       - "--entrypoints.admin.http.tls.certresolver=letsencrypt"
       - "--entrypoints.websecure.address=:443"
@@ -37,12 +39,10 @@ services:
       - ./traefik/:/etc/traefik/
     labels:
       - "traefik.enable=true"
+      - "traefik.http.middlewares.admin.basicauth.users=admin:${TRAEFIK_ADMIN_PASSWORD}"
       - "traefik.http.routers.traefik.rule=Host(`${DOMAIN}`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))"
       - "traefik.http.routers.traefik.entrypoints=admin"
       - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.tls=true"
-      - "traefik.http.routers.traefik.middlewares=admin"
-      - "traefik.http.middlewares.admin.basicauth.users=admin:${TRAEFIK_ADMIN_PASSWORD}"
 
 networks:
   default:
