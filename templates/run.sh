@@ -8,6 +8,7 @@ dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 compose() {
   /usr/bin/docker run --rm \
     --name "compose-$(date +%s)" \
+    --label "traefik.enable=false" \
     -w "${dir}" \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${dir}:${dir}" \
