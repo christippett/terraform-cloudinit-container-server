@@ -52,6 +52,6 @@ variable "environment" {
 variable "cloudinit" {
   description = "Supplementary cloud-init configuration."
   type        = any
-  default     = {}
+  default     = []
 }
 

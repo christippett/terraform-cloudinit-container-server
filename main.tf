@@ -4,6 +4,8 @@ resource "random_password" "traefik_admin" {
 }
 
 locals {
+  dir = "${path.module}/templates"
+
   letsencrypt_servers = {
     prod    = "https://acme-v02.api.letsencrypt.org/directory"
     staging = "https://acme-staging-v02.api.letsencrypt.org/directory"
@@ -19,12 +21,12 @@ locals {
   compose_re = "docker-(?:(\\w+)\\.)+ya?ml"
   image_re   = "(?:\\w+/)?(\\w+)(?:\\:\\w+)?" # namespace/image:tag
 
-  # services should follow the same schema as defined in the docker-compose docs
+  # service definition should have the same configuration as expected by docker-compose
   services = merge([
     for i, service in var.services : {
-      # infer service name based on its image
+      # name service after its image
       regex(local.image_re, service.image)[0] = merge(
-        # the first service should use the root domain as its host
+        # assign domain to the first service by default
         { domainname = i == 1 ? var.domain : null }, service
       )
     }
@@ -39,15 +41,16 @@ locals {
         volumes  = ["/var/app:/app"]
         labels = [
           "traefik.enable=true",
-          "traefik.http.routers.${name}.rule=Host(`${lookup(service, "domainname", "${name}.${var.domain}")}`)",
-          "traefik.http.routers.${name}.entryPoints=websecure",
-          "traefik.http.routers.${name}.tls.certresolver=letsencrypt"
+          "traefik.http.routers.${name}.rule=Host(`${
+            lookup(service, "domainname", "${name}.${var.domain}")
+          }`)",
+          "traefik.http.routers.${name}.entryPoints=websecure"
         ]
       }, service)
     })
   }
 
-    # Environment Variables --------------------------------------------------------
+  # Environment Variables --------------------------------------------------------
 
   env = merge({
     DOMAIN                 = var.domain
@@ -68,9 +71,6 @@ locals {
   ])
 
   # Cloud-Init Config ------------------------------------------------------------
-
-  tmpdir = "${path.module}/templates"
-  template_vars = local.env
 
   cloudinit = {
     runcmd = [<<-EOT
@@ -105,10 +105,10 @@ locals {
         )
       },
       [
-        for fp in fileset(local.tmpdir, "**") : {
+        for fp in fileset(local.dir, "**") : {
           path     = "/var/app/${fp}"
           encoding = "b64"
-          content  = filebase64("${local.tmpdir}/${fp}")
+          content  = filebase64("${local.dir}/${fp}")
         }
       ]
     ])
@@ -121,14 +121,18 @@ data "cloudinit_config" "config" {
 
   part {
     filename     = "init.cfg"
-    content      = "#cloud-config\n${yamlencode(local.cloudinit)}"
+    content      = join("\n", ["#cloud-config", yamlencode(local.cloudinit)])
     content_type = "text/cloud-config"
     merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
   }
 
-  part {
-    content      = "#cloud-config\n${yamlencode(var.cloudinit)}"
-    content_type = "text/cloud-config"
-    merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
+  dynamic "part" {
+    for_each = var.cloudinit
+
+    content {
+      content      = join("\n", ["#cloud-config", yamlencode(part.value)])
+      content_type = "text/cloud-config"
+      merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
+    }
   }
 }
