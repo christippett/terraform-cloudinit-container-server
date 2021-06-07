@@ -9,11 +9,10 @@ output "compose_config" {
 }
 
 output "environment" {
-  value     = local.env
-  sensitive = true
+  value = local.env
 }
 
-output "traefik_admin_password" {
-  value     = local.traefik_admin_password
-  sensitive = true
+output "traefik_config" {
+  value = local.traefik_config
 }
+

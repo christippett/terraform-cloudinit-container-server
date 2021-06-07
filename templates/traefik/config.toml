@@ -1,0 +1,10 @@
+[http]
+  [http.routers.traefik]
+    rule = "Host(`traefik.{{ env "DOMAIN" }}`)"
+    entrypoints = ["websecure"]
+    middlewares = ["admin-auth"]
+    service = "api@internal"
+
+  [http.middlewares]
+    [http.middlewares.admin-auth.basicAuth]
+      users = ["{{ env "TRAEFIK_ADMIN_USER" }}:{{ env "TRAEFIK_ADMIN_PASSWORD" }}"]

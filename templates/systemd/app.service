@@ -1,13 +1,16 @@
 [Unit]
-Description=Docker Compose Application
+Description=Docker Compose Deployment
 Requires=docker.service
 After=docker.service
 
 [Service]
-Type=simple
+Type=oneshot
+RemainAfterExit=yes
 WorkingDirectory=/var/app
-ExecStart=/var/app/run.sh start
-ExecStop=/var/app/run.sh stop
+ExecStartPre=-/var/app/run.sh pull
+ExecStart=/var/app/run.sh up
+ExecStop=-/var/app/run.sh stop
+ExecStopPost=/var/app/run.sh down
 
 [Install]
 WantedBy=multi-user.target

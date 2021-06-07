@@ -2,49 +2,21 @@ version: "3"
 services:
   traefik:
     container_name: traefik
-    image: traefik:${TRAEFIK_VERSION:-latest}
-    restart: unless-stopped
-    command:
-      - "--log.level=DEBUG"
-      - "--api.dashboard=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=true"
-      - '--providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service"}}.${DOMAIN}`)'
-      - "--providers.docker.network=${DOCKER_NETWORK:-web}"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
-      - "--entrypoints.admin.address=:${TRAEFIK_ADMIN_PORT:-9000}"
-      - "--entrypoints.admin.http.middlewares=admin"
-      - "--entrypoints.admin.http.tls=true"
-      - "--entrypoints.admin.http.tls.certresolver=letsencrypt"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.websecure.http.tls=true"
-      - "--entrypoints.websecure.http.tls.certresolver=letsencrypt"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.caserver=${LETSENCRYPT_SERVER}"
+    image: traefik:2.4
+    restart: always
     env_file:
       - ".env"
+      - ".env.traefik"
     ports:
       - "80:80"
       - "443:443"
-      - "${TRAEFIK_ADMIN_PORT:-9000}:${TRAEFIK_ADMIN_PORT:-9000}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/localtime:/etc/localtime:ro
-      - ${TRAEFIK_CONFIG_DIR:-./traefik/}:/etc/traefik/
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.middlewares.admin.basicauth.users=admin:${TRAEFIK_ADMIN_PASSWORD}"
-      - "traefik.http.routers.traefik.rule=Host(`${DOMAIN}`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))"
-      - "traefik.http.routers.traefik.entrypoints=admin"
-      - "traefik.http.routers.traefik.service=api@internal"
-
+      - ${APPDIR:-/var/app}/traefik:/etc/traefik
+      - ${APPDIR:-/var/app}/acme:/acme
+    labels: ["traefik.enable=false"]
 networks:
   default:
     external:
-      name: ${DOCKER_NETWORK:-web}
+      name: ${DOCKER_NETWORK:-traefik}

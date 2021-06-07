@@ -1,75 +1,91 @@
-resource "random_password" "traefik_admin" {
-  count = var.traefik_admin_password == null ? 1 : 0
-  length = 30
-}
-
 locals {
-  dir = "${path.module}/templates"
+  dir            = "${path.module}/templates"
+  appdir         = "/var/app"
+  docker_network = "traefik"
 
   letsencrypt_servers = {
     prod    = "https://acme-v02.api.letsencrypt.org/directory"
     staging = "https://acme-staging-v02.api.letsencrypt.org/directory"
   }
+  letsencrypt_server = lookup(local.letsencrypt_servers, var.letsencrypt.server, "staging")
 
-  traefik_admin_password = coalesce(
-    var.traefik_admin_password,
-    random_password.traefik_admin[0].result
-  )
+  traefik_admin = {
+    user     = "admin"
+    password = "traefik"
+  }
+
 
   # Docker Compose ---------------------------------------------------------------
 
-  compose_re = "docker-(?:(\\w+)\\.)+ya?ml"
-  image_re   = "(?:\\w+/)?(\\w+)(?:\\:\\w+)?" # namespace/image:tag
-
-  # service definition should have the same configuration as expected by docker-compose
-  services = merge([
-    for i, service in var.services : {
-      # name service after its image
-      regex(local.image_re, service.image)[0] = merge(
-        # assign domain to the first service by default
-        { domainname = i == 1 ? var.domain : null }, service
-      )
-    }
-  ]...)
-
-  compose_config = {
-    version  = "3"
-    services = merge({
-      for name, service in local.services : name => merge({
+  default_compose_config = {
+    version = "3"
+    services = {
+      default = {
+        image    = coalesce(var.image, "traefik/whoami")
         restart  = "unless-stopped"
         env_file = [".env"]
-        volumes  = ["/var/app:/app"]
+        volumes  = ["${local.appdir}:/app"]
         labels = [
           "traefik.enable=true",
-          "traefik.http.routers.${name}.rule=Host(`${
-            lookup(service, "domainname", "${name}.${var.domain}")
-          }`)",
-          "traefik.http.routers.${name}.entryPoints=websecure"
+          "traefik.http.routers.default.rule=Host(`${var.domain}`)",
+          "traefik.http.routers.default.entryPoints=websecure"
         ]
-      }, service)
-    })
+      }
+    }
   }
+
+  compose_config = coalesce(var.docker_compose, yamlencode(local.default_compose_config))
 
   # Environment Variables --------------------------------------------------------
 
-  env = merge({
-    DOMAIN                 = var.domain
-    DOCKER_NETWORK         = "web"
-    TRAEFIK_VERSION        = "2.4"
-    TRAEFIK_ADMIN_PORT     = 9000
-    TRAEFIK_ADMIN_PASSWORD = bcrypt(local.traefik_admin_password, 6)
-    TRAEFIK_CONFIG_DIR     = var.traefik_config_dir
-    LETSENCRYPT_EMAIL      = var.letsencrypt_email
-    LETSENCRYPT_SERVER = lookup(
-      local.letsencrypt_servers,
-      var.letsencrypt_server,
-      local.letsencrypt_servers.staging
-    )
-  }, var.environment)
+  # Traefik configuration
+  traefik_config = merge(
+    {
+      TRAEFIK_LOG_LEVEL      = "DEBUG"
+      TRAEFIK_ACCESSLOG      = true
+      TRAEFIK_API_DASHBOARD  = true
+      TRAEFIK_ADMIN_USER     = local.traefik_admin.user
+      TRAEFIK_ADMIN_PASSWORD = bcrypt(local.traefik_admin.password)
 
-  environment = join("\n", [ for key in sort(keys(local.env)) :
-    "${key}=${lookup(local.env, key, "")}"
-  ])
+      TRAEFIK_PROVIDERS_DOCKER                  = true
+      TRAEFIK_PROVIDERS_DOCKER_DEFAULTRULE      = "Host(`{{ index .Labels \"com.docker.compose.service\" }}.{{ env \"DOMAIN\" }}`)"
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT = true
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK          = local.docker_network
+      TRAEFIK_PROVIDERS_FILE_DIRECTORY          = "/etc/traefik"
+
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt                               = true
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_CASERVER                 = local.letsencrypt_server
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_EMAIL                    = var.letsencrypt.email
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_HTTPCHALLENGE            = true
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_HTTPCHALLENGE_ENTRYPOINT = "web"
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_STORAGE                  = "/acme/certs.json"
+
+      TRAEFIK_ENTRYPOINTS_WEB                                        = true
+      TRAEFIK_ENTRYPOINTS_WEB_ADDRESS                                = ":80"
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_PERMANENT = true
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME    = "https"
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_TO        = "websecure"
+
+      TRAEFIK_ENTRYPOINTS_WEBSECURE                       = true
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS               = ":443"
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS              = true
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_CERTRESOLVER = "letsencrypt"
+    },
+    { for k, v in var.environment : k => v if substr(k, 0, 8) == "TRAEFIK_" }
+  )
+
+  traefik_env = join("\n", [for k in sort(keys(local.traefik_config)) : "${k}=${local.traefik_config[k]}"])
+
+  # Other environment variables
+  env = merge(
+    {
+      APPDIR         = local.appdir
+      DOCKER_NETWORK = local.docker_network
+      DOMAIN         = var.domain
+    },
+    { for k, v in var.environment : k => v if substr(k, 0, 8) != "TRAEFIK_" }
+  )
+  user_env = join("\n", [for k in sort(keys(local.env)) : "${k}=${local.env[k]}"])
 
   # Cloud-Init Config ------------------------------------------------------------
 
@@ -77,36 +93,38 @@ locals {
     runcmd = [<<-EOT
       echo "🐳 Installing Docker"
       which docker > /dev/null 2>&1 || curl -fsSL https://get.docker.com | sh
-      if [ ! "$(docker network list -q --filter=name=${local.env.DOCKER_NETWORK})" ]; then
-        docker network create ${local.env.DOCKER_NETWORK}
+      if [ ! "$(docker network list -q --filter=name=${local.docker_network})" ]; then
+        docker network create ${local.docker_network}
       fi
       EOT
       , <<-EOT
       echo "🚀 Starting application(s)"
-      chmod a+x /var/app/run.sh
+      chmod a+x ${local.appdir}/run.sh
       systemctl enable --now \
-        /var/app/systemd/app.service \
-        /var/app/systemd/app-watcher.service
+        ${local.appdir}/systemd/app.service \
+        ${local.appdir}/systemd/app-watcher.service
       EOT
     ]
 
     write_files = flatten([
       {
-        path = "/var/app/.env"
+        path     = "${local.appdir}/.env"
         encoding = "b64"
-        content = base64encode(local.environment)
+        content  = base64encode(local.user_env)
       },
       {
-        path     = "/var/app/docker-compose.override.yaml"
+        path     = "${local.appdir}/.env.traefik"
         encoding = "b64"
-        content  = (
-          length(local.services) > 0 ? base64encode(yamlencode(local.compose_config))
-          : base64encode(var.docker_compose_file)
-        )
+        content  = base64encode(local.traefik_env)
+      },
+      {
+        path     = "${local.appdir}/docker-compose.override.yaml"
+        encoding = "b64"
+        content  = base64encode(local.compose_config)
       },
       [
         for fp in fileset(local.dir, "**") : {
-          path     = "/var/app/${fp}"
+          path     = "${local.appdir}/${fp}"
           encoding = "b64"
           content  = filebase64("${local.dir}/${fp}")
         }

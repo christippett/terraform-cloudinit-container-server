@@ -21,9 +21,13 @@ usage() {
 🐳 ${BLUE}${B}Usage:${X}${WHITE} $(basename "${BASH_SOURCE[0]}") [-h] COMMAND [args...]${X}
 
 ${WHITE}${B}Commands:${X}
-${ORANGE} start      ${X} docker compose pull/up
-${ORANGE} stop       ${X} docker compose rm/stop
-${ORANGE} restart    ${X} docker compose restart
+${ORANGE} up        ${X} docker compose up -d --remove-orphans
+${ORANGE} down      ${X} docker compose down --volumes --remove-orphans --rmi all
+${ORANGE} stop      ${X} docker compose stop
+${ORANGE} pull      ${X} docker compose pull --ignore-pull-failures --include-deps
+${ORANGE} [CMD]     ${X} docker compose ${B}[CMD]${X}
+${WHITE} help      ${X} 👆
+
 
 ${BLUE}
                     ##        .
@@ -46,22 +50,25 @@ parse_params() {
   fi
 
   case "$1" in
-  start)
-    print_cmd "up"
-    msg "🚀 ${WHITE}${B}Starting...${X}"
-    compose up
+  up)
+    print_cmd "up -d --remove-orphans"
+    msg "🚀 ${WHITE}${B}Launching services ⇢${X}"
+    compose up -d --remove-orphans
+    ;;
+  down)
+    print_cmd "down --volumes --remove-orphans --rmi all"
+    msg "🧨 ${WHITE}${B}Stopping and removing services ⇢${X}"
+    compose down --volumes --remove-orphans --rmi all
     ;;
   stop)
-    print_cmd "rm -fs"
-    msg "🧨 ${WHITE}${B}Stopping...${X}"
-    compose rm -fs
+    print_cmd "stop"
+    msg "💥 ${WHITE}${B}Stopping services ⇢${X}"
+    compose stop
     ;;
-  restart)
-    print_cmd "rm -fs" "pull --ignore-pull-failures --include-deps" "up"
-    msg "💥 ${WHITE}${B}Restarting...${X}"
-    compose rm -fs
+  pull)
+    print_cmd "pull --ignore-pull-failures --include-deps"
+    msg "🪢 ${WHITE}${B}Pulling service images ⇢${X}"
     compose pull --ignore-pull-failures --include-deps
-    compose up
     ;;
   help)
     usage
@@ -85,7 +92,7 @@ print_cmd() {
   for cmd in "${@}"; do
     msg "🐳 ${BLUE}docker compose${X} ${WHITE}${cmd}${X}"
   done
-  msg "${BLACK}⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺${X}"
+  msg "${BLACK}⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺${X}"
 }
 
 setup_colors() {

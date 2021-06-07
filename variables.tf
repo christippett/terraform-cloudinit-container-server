@@ -4,59 +4,60 @@ variable "domain" {
   type        = string
 }
 
-variable "letsencrypt_email" {
-  description = "Email address for registering Let's Encrypt certificates."
-  type        = string
-}
-
-variable "letsencrypt_server" {
-  description = "Let's Encrypt ACME server (prod or staging)."
-  type        = string
-  default     = "staging"
-}
-
-variable "traefik_admin_password" {
-  description = "Admin password for accessing Traefik's API and dashboard."
+variable "image" {
+  description = <<-EOT
+    Docker image to deploy as the default service. The service is exposed using
+    the port number defined by the `PORT` environment variable (default `80`)
+    and can be overridden by specifying a custom value under `var.environment`.
+    Ignored if `var.docker_compose` is defined.
+  EOT
   type        = string
   default     = null
 }
 
-variable "traefik_config_dir" {
-  description = "File path on the remote server where Traefik should store and lookup its configuration."
+variable "docker_compose" {
+  description = <<-EOT
+    Docker Compose configuration that will be copied to the server as the file
+    `docker-compose.override.yaml`. Either `var.docker_compose` or `var.image`
+    must be defined.
+  EOT
   type        = string
   default     = null
-}
-
-variable "services" {
-  description = "List of container services to deploy. Refer to the Docker Compose documentation for available options: https://docs.docker.com/compose/compose-file/compose-file-v3/#service-configuration-reference."
-  type        = any
-  default     = []
 
   validation {
-    condition = alltrue([for s in var.services : contains(keys(s), "image")])
-    error_message = "Service definition must include `image` field."
-  }
-}
-
-variable "docker_compose_file" {
-  description = "Path to a Docker Compose file used to override the default configuration included with this module."
-  type = string
-  default = null
-
-  validation {
-    condition = var.docker_compose_file == null || can(yamldecode(var.docker_compose_file))
-    error_message = "Docker Compose file is not valid YAML."
+    condition     = can(yamldecode(coalesce(var.docker_compose, "x-validate:")))
+    error_message = "Docker Compose file not valid YAML."
   }
 }
 
 variable "environment" {
-  description = "Map of environment variables to be made available in every running container, as well as used by Docker Compose when parsing its configuration file."
+  description = <<-EOT
+    Environment variables that will be saved as a `.env` file and made
+    available to Docker Compose and all running containers.
+  EOT
   type        = map(string)
   default     = {}
+
+  validation {
+    condition     = !anytrue([for k in keys(var.environment) : contains(["DOMAIN"], k)])
+    error_message = "One or more environment variables are in conflict with the used internally by this module."
+  }
+}
+
+variable "letsencrypt" {
+  description = "Lets Encrypt configuration."
+  type = object({
+    email  = string
+    server = string
+  })
+  default = {
+    email  = null
+    server = "staging"
+  }
 }
 
 variable "cloudinit" {
-  description = "Supplementary cloud-init configuration."
+  description = "Extra cloud-init configuration."
   type        = any
   default     = []
 }
