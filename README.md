@@ -3,7 +3,9 @@
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/christippett/terraform-cloudinit-container-server?label=Version)](./CHANGELOG.md) [![Terraform Registry](https://img.shields.io/badge/Terraform-Registry-623CE4)](https://registry.terraform.io/modules/christippett/container-server/cloudinit/)
 
 🙅‍♀️ No external dependencies.
+
 🏴‍☠️ No proprietary frameworks.
+
 ⛑ No onerous configuration.
 
 ... just plain ol' `docker`, `docker-compose` and `systemd` — deployed with `cloud-init` using a single, cloud-agnostic configuration script.
@@ -19,7 +21,7 @@
 - [Quickstart](#quickstart)
   - [1️⃣ Deploying a single container](#%E2%83%A3-deploying-a-single-container)
   - [2️⃣ Deploying a `docker-compose.yaml` file](#%E2%83%A3-deploying-a-docker-composeyaml-file)
-- [Cloud™️ Examples](#cloud-examples)
+- [Cloud™ Examples](#cloud-examples)
   - [☁ AWS](#%E2%98%81-aws)
   - [☁ Google Cloud](#%E2%98%81-google-cloud)
   - [☁ Azure](#%E2%98%81-azure)
@@ -94,7 +96,7 @@ module "cloudinit" {
 
 When supplying your own `docker-compose.yaml` configuration, Traefik will automatically route each service to its own subdomain following the pattern **`<service_name>.<domain>`**.
 
-## Cloud™️ Examples
+## Cloud™ Examples
 
 The examples below demonstrate creating and deploying virtual machines from different cloud vendors using the output from this module.
 
