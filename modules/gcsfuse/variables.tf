@@ -1,7 +1,7 @@
 variable "bucket" {
-  type  = string
+  type = string
 }
 
 variable "mount_dir" {
-  type  = string
+  type = string
 }

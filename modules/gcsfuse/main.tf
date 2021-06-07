@@ -21,7 +21,7 @@ locals {
     # importing their keys from cloudinit - we need to add the key separately
     # before the apt module runs.
     bootcmd = ["curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -"]
-    runcmd   = ["mkdir -p ${var.mount_dir} && gcsfuse ${var.bucket} ${var.mount_dir}"]
+    runcmd  = ["mkdir -p ${var.mount_dir} && gcsfuse ${var.bucket} ${var.mount_dir}"]
   }
 }
 

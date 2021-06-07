@@ -26,16 +26,10 @@ locals {
       content  = base64encode(var.daemon_config)
     }]
 
-    runcmd   = flatten([
+    runcmd = [
       "echo '🐳 Installing Docker'",
-      "which docker > /dev/null 2>&1 || curl -fsSL https://get.docker.com | sh",
-      var.create_network == null ? [] : [<<-EOT
-        if [ ! "$(docker network list -q --filter=name=${var.create_network})" ]; then
-          docker network create ${var.create_network}
-        fi
-      EOT
-      ]
-    ])
+      "which docker > /dev/null 2>&1 || curl -fsSL https://get.docker.com | sh"
+    ]
   }
 }
 

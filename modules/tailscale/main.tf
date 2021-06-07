@@ -15,10 +15,10 @@ locals {
 
   tailscale_flags = flatten([
     "--authkey ${var.authkey}",
-    var.hostname != null    ? ["--hostname ${var.hostname}"] : [],
-    var.accept_routes       ? ["--accept_routes"]            : [],
-    var.accept_dns          ? ["--accept_dns"]               : [],
-    var.advertise_exit_node ? ["--advertise-exit-node"]      : [],
+    var.hostname != null ? ["--hostname ${var.hostname}"] : [],
+    var.accept_routes ? ["--accept-routes"] : [],
+    var.accept_dns ? ["--accept-dns"] : [],
+    var.advertise_exit_node ? ["--advertise-exit-node"] : [],
     (
       length(var.advertise_routes) > 0
       ? ["--advertise-routes ${join(",", var.advertise_routes)}"]
@@ -40,7 +40,7 @@ locals {
       }
     }
     packages = ["tailscale"]
-    runcmd   = flatten([
+    runcmd = flatten([
       length(var.advertise_routes) > 0 ? [local.enable_ip_forwarding] : [],
       "tailscale up ${join(" \\\n  ", local.tailscale_flags)}"
     ])

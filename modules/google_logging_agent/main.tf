@@ -1,17 +1,6 @@
 
 locals {
   config = {
-    package_upgrade = true
-    package_update  = true
-    apt = {
-      preserve_sources_list = true
-      sources = {
-        gcsfuse = {
-          source = "deb http://packages.cloud.google.com/apt gcsfuse-focal main"
-        }
-      }
-    }
-    packages = ["gcsfuse"]
     runcmd = [
       "echo '🕵🏻‍♀️ Installing Google Logging Agent'",
       "curl -sSO https://dl.google.com/cloudagents/add-logging-agent-repo.sh",

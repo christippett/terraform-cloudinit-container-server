@@ -1,5 +1,5 @@
 variable "authkey" {
-  type  = string
+  type = string
 }
 
 variable "hostname" {
