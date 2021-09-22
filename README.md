@@ -2,13 +2,11 @@
 
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/christippett/terraform-cloudinit-container-server?label=Version)](./CHANGELOG.md) [![Terraform Registry](https://img.shields.io/badge/Terraform-Registry-623CE4)](https://registry.terraform.io/modules/christippett/container-server/cloudinit/)
 
-🙅‍♀️ No external dependencies.
+🧳 No external dependencies.<br>
+🏴‍☠️ No proprietary frameworks.<br>
+🗞 No esoteric configuration to memorise.<br>
 
-🏴‍☠️ No proprietary frameworks.
-
-⛑ No onerous configuration.
-
-... just plain ol' `docker`, `docker-compose` and `systemd` — deployed with `cloud-init` using a single, cloud-agnostic configuration script.
+... just plain vanilla `docker`, `docker-compose` and `systemd` — deployed using a single, cloud-agnostic configuration script courtesy of `cloud-init`.
 
 ---
 
