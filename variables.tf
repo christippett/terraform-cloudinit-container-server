@@ -17,7 +17,7 @@ variable "image" {
 
 variable "docker_compose" {
   description = <<-EOT
-    Docker Compose configuration that will be copied to the server as the file
+    Docker Compose configuration that will be copied to the server as
     `docker-compose.override.yaml`. Either `var.docker_compose` or `var.image`
     must be defined.
   EOT
@@ -26,7 +26,7 @@ variable "docker_compose" {
 
   validation {
     condition     = can(yamldecode(coalesce(var.docker_compose, "x-validate:")))
-    error_message = "Docker Compose file not valid YAML."
+    error_message = "Docker Compose content not valid YAML."
   }
 }
 
@@ -40,7 +40,7 @@ variable "environment" {
 
   validation {
     condition     = !anytrue([for k in keys(var.environment) : contains(["DOMAIN"], k)])
-    error_message = "One or more environment variables are in conflict with the used internally by this module."
+    error_message = "One or more environment variables conflict with the internal environment variables used by this module."
   }
 }
 
