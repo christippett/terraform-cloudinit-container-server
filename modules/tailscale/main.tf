@@ -47,19 +47,5 @@ locals {
         defer       = true
       }
     ]
-    package_update = true
-    packages       = ["curl"]
-  }
-}
-
-data "cloudinit_config" "config" {
-  gzip          = false
-  base64_encode = false
-
-  part {
-    filename     = "tailscale.cfg"
-    content      = format("#cloud-config\n%s", yamlencode(local.config))
-    content_type = "text/cloud-config"
-    merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
   }
 }
