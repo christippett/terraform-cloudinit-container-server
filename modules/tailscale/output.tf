@@ -1,7 +1,7 @@
 output "config" {
-  value = local.config
+  value = data.cloudinit_config.config.part
 }
 
-output "cloudinit_config" {
-  value = data.cloudinit_config.config
+output "user_data" {
+  value = data.cloudinit_config.config.rendered
 }
