@@ -6,7 +6,7 @@ data "cloudinit_config" "config" {
     filename     = "${basename(abspath(path.module))}.cfg"
     content      = format("#cloud-config\n%s", yamlencode(local.config))
     content_type = "text/cloud-config"
-    merge_type   = "list(prepend)+dict(no_replace,recurse_list)+str()"
+    merge_type   = "list(append)+dict(no_replace,recurse_list)+str()"
   }
 }
 

@@ -30,21 +30,21 @@ locals {
   config = {
     runcmd = [
       "curl -fsSL https://tailscale.com/install.sh | sh",
+      "sysctl -p /etc/sysctl.d/99-tailscale.conf",
       flatten(["tailscale", "up", local.flags])
     ]
     write_files : [
       {
-        path    = "/etc/sysctl.d/99-tailscale.conf"
-        content = <<-EOT
-        net.ipv4.ip_forward = 1
-        net.ipv6.conf.all.forwarding = 1
-        EOT
+        path = "/etc/sysctl.d/99-tailscale.conf"
+        content = join("\n", [
+          "net.ipv4.ip_forward=1",
+          "net.ipv6.conf.all.forwarding=1"
+        ])
       },
       {
         path        = local.authkey_file
         content     = var.authkey
         permissions = "0600"
-        defer       = true
       }
     ]
   }

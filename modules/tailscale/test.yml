@@ -1,0 +1,15 @@
+name: "Joe Bloggs"
+email_address: "joe@example.co.nz"
+organisation_name: null # Only for non-.nz names
+postal_address:
+  line1: "15 Example Ave"
+  line2: null
+  city: "Exampleton"
+  region: null
+  postal_code: "1234"
+  country_code: "NZ"
+phone_number:
+  country_code: "64"
+  area_code: "3"
+  local_number: "123 456"
+fax_number: null # Optional
