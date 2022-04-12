@@ -178,6 +178,11 @@ resource "aws_instance" "vm" {
 ## Google Cloud
 
 ```hcl
+data "google_compute_image" "cos" {
+  family = "cos-stable"
+  project = "cos-cloud"
+}
+
 resource "google_compute_instance" "vm" {
   name         = "container-server"
   project      = "my-project"
