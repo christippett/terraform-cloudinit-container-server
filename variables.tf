@@ -57,3 +57,8 @@ variable "docker_compose_tag" {
   type        = string
   default     = "latest"
 }
+
+variable "image" {
+  type    = string
+  default = null
+}
