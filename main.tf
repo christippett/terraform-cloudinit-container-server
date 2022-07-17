@@ -40,6 +40,8 @@ locals {
     WEBHOOK_URL_PREFIX         = var.enable_webhook ? "hooks" : null
     WEBHOOK_HTTP_METHOD        = var.enable_webhook ? "PATCH" : null
   }, var.env)
+
+  login = var.registry_user ? "-u ${var.registry_user} -p ${var.registry_password} ${var.registry_url}" : null
 }
 
 /* ========================================================================== */
@@ -130,6 +132,7 @@ locals {
     for f in local.files : merge(regex(local.file_regex, f.filename), f)
     if can(regex(local.file_regex, f.filename))
   ]
+
 }
 
 // Generate cloud-init config
@@ -145,6 +148,7 @@ data "cloudinit_config" "config" {
     content = templatefile("${local.template_dir}/cloud-config.yaml", {
       files                = local.files
       docker_compose_files = local.docker_compose_files
+      login                = local.login
     })
   }
 

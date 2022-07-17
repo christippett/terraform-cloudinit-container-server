@@ -62,3 +62,18 @@ variable "image" {
   type    = string
   default = null
 }
+
+variable "registry_url" {
+  type    = string
+  default = null
+}
+
+variable "registry_user" {
+  type    = string
+  default = null
+}
+variable "registry_password" {
+  type      = string
+  default   = null
+  sensitive = true
+}
