@@ -41,7 +41,7 @@ locals {
     WEBHOOK_HTTP_METHOD        = var.enable_webhook ? "PATCH" : null
   }, var.env)
 
-  login = var.registry_user ? "-u ${var.registry_user} -p ${var.registry_password} ${var.registry_url}" : null
+  login = var.registry_user != null ? "-u ${var.registry_user} -p ${var.registry_password} ${var.registry_url}" : null
 }
 
 /* ========================================================================== */
