@@ -79,7 +79,10 @@ runcmd:
   - "[ $(docker network list -q --filter=name=web) ] || docker network create web"
 %{ if login != null }
   - docker login ${login}
-  - docker pull '${image}'
 %{ endif }
+  while ! docker pull '${image}'; do
+    echo '${image} not available yet. Sleeping for 30 seconds';
+    sleep 30;
+  done
   # Enable systemd services responsible for managing Docker Compose services
   - systemctl daemon-reload && systemctl enable --now app app-monitor.path
