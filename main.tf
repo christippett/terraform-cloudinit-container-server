@@ -149,6 +149,7 @@ data "cloudinit_config" "config" {
       files                = local.files
       docker_compose_files = local.docker_compose_files
       login                = local.login
+      image                = var.image
     })
   }
 
