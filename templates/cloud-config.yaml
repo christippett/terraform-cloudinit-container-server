@@ -21,18 +21,9 @@ write_files:
       RemainAfterExit=yes
       WorkingDirectory=/var/app
       EnvironmentFile=/var/app/.env
-      ExecStartPre=-/usr/bin/docker run --rm \
-        -v /var/run/docker.sock:/var/run/docker.sock \
-        -v "/var/app:/var/app" -w="/var/app" \
-        "$${COMPOSE_DOCKER_IMAGE}:$${COMPOSE_DOCKER_TAG}" -f ${c.filename} rm
-      ExecStart=/usr/bin/docker run --rm \
-        -v /var/run/docker.sock:/var/run/docker.sock \
-        -v "/var/app:/var/app" -w="/var/app" \
-        "$${COMPOSE_DOCKER_IMAGE}:$${COMPOSE_DOCKER_TAG}" -f ${c.filename} up -d
-      ExecStop=/usr/bin/docker run --rm \
-        -v /var/run/docker.sock:/var/run/docker.sock \
-        -v "/var/app:/var/app" -w="/var/app" \
-        "$${COMPOSE_DOCKER_IMAGE}:$${COMPOSE_DOCKER_TAG}" -f ${c.filename} stop -t 15
+      ExecStartPre=-/usr/bin/docker compose -f ${c.filename} rm
+      ExecStart=/usr/bin/docker compose -f ${c.filename} up -d
+      ExecStop=/usr/bin/docker compose -f ${c.filename} stop -t 15
 
       [Install]
       WantedBy=multi-user.target
@@ -48,10 +39,7 @@ write_files:
       Type=oneshot
       WorkingDirectory=/var/app
       EnvironmentFile=/var/app/.env
-      ExecStartPre=-/usr/bin/docker run --rm \
-        -v /var/run/docker.sock:/var/run/docker.sock \
-        -v "/var/app:/var/app" -w="/var/app" \
-        "$${COMPOSE_DOCKER_IMAGE}:$${COMPOSE_DOCKER_TAG}" pull --ignore-pull-failures
+      ExecStartPre=-/usr/bin/docker compose pull --ignore-pull-failures
       ExecStart=/usr/bin/systemctl restart app.service
 
       [Install]
