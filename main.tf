@@ -21,6 +21,8 @@ locals {
     DOMAIN                     = var.domain
     LETSENCRYPT_EMAIL          = var.email
     LETSENCRYPT_SERVER         = var.letsencrypt_staging ? "https://acme-staging-v02.api.letsencrypt.org/directory" : null
+    COMPOSE_DOCKER_IMAGE       = "docker/compose"
+    COMPOSE_DOCKER_TAG         = "1.29.2"
     IMAGE_NAME                 = try(split(":", var.image)[0], null)
     IMAGE_TAG                  = try(split(":", var.image)[1], "latest")
     CONTAINER_NAME             = lookup(var.container, "container_name", null)
