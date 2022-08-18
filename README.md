@@ -8,7 +8,7 @@ No external dependencies.
 
 No proprietary frameworks.
 
-Just plain ol' `docker`, `docker-compose` and `systemd` — deployed with `cloud-init` using a single, cloud-agnostic configuration script.
+Just plain ol' `docker`, `docker-compose` and `systemd` - deployed with `cloud-init` using a single, cloud-agnostic configuration script.
 
 # What does it do?
 
@@ -117,11 +117,11 @@ module "container-server" {
 }
 ```
 
-Keep in mind when providing your own `docker-compose.yaml` file that you'll need to manually define the labels on your service so that Traefik can identify and route requests to your application.
+Keep in mind when providing your own `docker-compose.yaml` file that you'll need to manually define the labels on your service so that Caddy can identify and route requests to your application.
 
-Traefik is a wonderful tool with a lot of functionality and configuration options, however it can be a bit intimidating to set up if you're not familiar with it. Inspecting the template included in this module is a good starting point if you need help creating your own Docker Compose file. These labels need to be added to every service defined in your Docker Compose file that you want to make available externally.
+Caddy is a wonderful tool with a lot of functionality and configuration options, but can be daunting to configure. The example below shows the needed labels for Caddy to pick up the service. Inspecting the template included in this module is a good starting point if you need help creating your own Docker Compose file. These labels need to be added to every service defined in your Docker Compose file that you want to make available externally.
 
-For more advanced options, refer to the official [Traefik documentation](https://docs.traefik.io/).
+For more advanced options, refer to the official [Caddy documentation](https://caddyserver.com/docs/) and the [Caddy Docker proxy documentation](https://github.com/lucaslorentz/caddy-docker-proxy).
 
 ```yaml
 # docker-compose.yaml
@@ -136,23 +136,20 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.portainer.rule=Host(`${domain}`)"
-      - "traefik.http.routers.portainer.entrypoints=websecure"
-      - "traefik.http.routers.portainer.tls=true"
-      - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
+      caddy: ${DOMAIN}
+      caddy.reverse_proxy: {{upstreams}}
 networks:
   default:
     external:
       name: web
 ```
 
-### Some extra information about Traefik
+### Some extra information about Caddy
 
-- 🔗 Traefik connects to services over the `web` Docker network by default — all service(s) you want exposed need to be on this network.
-- 🔒 Let's Encrypt is configured to use the `letsencrypt` certificate resolver from Traefik. Refer to the example `docker-compose.yaml` file above for the labels needed to enable and configure this feature.
+- 🔗 Caddy connects to services over the `web` Docker network by default - all service(s) you want exposed need to be on this network.
+- 🔒 Caddy will automatically fetch HTTPS certificates from Let's Encrypt or ZeroSSL automatically for all domains specified.
 - 📋 Almost all configuration options end up as environment variables defined in a `.env` file saved to the virtual machine. These values are read by Docker Compose on start-up and can be used to parameterise your Docker Compose file without impacting its use in other environments (such as running `docker-compose` locally).
-- 📊 The module provides an option for enabling Traefik's [monitoring dashboard](https://docs.traefik.io/operations/dashboard/) and API. When enabled, the dashboard is accessible from `https://${domain}:9000/dashboard/` and the API from `https://${domain}:9000/api/`. The port used by Traefik can be customised using the `TRAEFIK_OPS_PORT` environment variable.
+- 📊 Caddy does not have a dashboard, but does have an admin API that exposes metrics. The port used for this can be customised using the `CADDY_ADMIN_PORT` environment variable. (**Note:** you proabably don't want this publicly accessible!)
 
 # Example integrations with AWS, Google Cloud, Azure and DigitalOcean
 

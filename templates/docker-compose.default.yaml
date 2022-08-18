@@ -9,11 +9,8 @@ services:
     container_name: "${CONTAINER_NAME}"
     command: "${CONTAINER_COMMAND}"
     labels:
-      - "traefik.enable=${TRAEFIK_ENABLE:-true}"
-      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.app.entrypoints=websecure"
-      - "traefik.http.routers.app.tls=true"
-      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+      caddy: "${DOMAIN}"
+      caddy.reverse_proxy: "{{upstreams}}"
     logging:
       driver: ${DOCKER_LOG_DRIVER:-json-file}
     pull_policy: always

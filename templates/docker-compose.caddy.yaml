@@ -1,0 +1,29 @@
+version: "3.3"
+
+services:
+  caddy:
+    # see https://github.com/lucaslorentz/caddy-docker-prox
+    restart: unless-stopped
+    image: "lucaslorentz/caddy-docker-proxy:${CADDY_IMAGE_TAG:-2.7-alpine}"
+    container_name: "traefik"
+    environment:
+      - "CADDY_INGRESS_NETWORKS=${DOCKER_NETWORK:-web}"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "${CADDY_ADMIN_PORT-2019}:${CADDY_ADMIN_PORT-2019}"
+    volumes:
+      - "./.caddy:/data"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      caddy.admin: ":${CADDY_ADMIN_PORT-2019}"
+      caddy.admin.origins: "${DOMAIN}"
+      caddy.email: "${LETSENCRYPT_EMAIL}"
+      caddy.acme_ca: "${LETSENCRYPT_SERVER}"
+      caddy.log.level: "${CADDY_LOG_LEVEL:-info}"
+    logging:
+      driver: ${DOCKER_LOG_DRIVER:-journald}
+networks:
+  default:
+    external:
+      name: "${DOCKER_NETWORK:-web}"

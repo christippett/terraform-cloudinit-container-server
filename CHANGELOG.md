@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [Unreleased](https://github.com/onecommons/terraform-cloudinit-container-server/compare/v1.2.1...master)
+
+### Features
+
+- Switched from Traefik proxy to Caddy proxy, for simpler config
+
 ### [1.2.1](https://github.com/christippett/terraform-cloudinit-container-server/compare/v1.2.0...v1.2.1) (2021-04-14)
 
 ### Bug Fixes

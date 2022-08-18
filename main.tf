@@ -30,13 +30,11 @@ locals {
     CONTAINER_PORT             = lookup(var.container, "port", null)
     DOCKER_NETWORK             = "web"
     DOCKER_LOG_DRIVER          = null
-    TRAEFIK_ENABLED            = null
-    TRAEFIK_IMAGE_TAG          = null
-    TRAEFIK_LOG_LEVEL          = null
-    TRAEFIK_API_DASHBOARD      = null
-    TRAEFIK_PASSWD_FILE        = null
-    TRAEFIK_EXPOSED_BY_DEFAULT = null
-    TRAEFIK_OPS_PORT           = null
+    CADDY_ENABLED              = null
+    CADDY_IMAGE_TAG            = null
+    CADDY_LOG_LEVEL            = null
+    CADDY_OPS_PORT             = null
+    CADDY_ADMIN_PORT             = null
     WEBHOOK_URL_PREFIX         = var.enable_webhook ? "hooks" : null
     WEBHOOK_HTTP_METHOD        = var.enable_webhook ? "PATCH" : null
   }, var.env)
@@ -94,8 +92,8 @@ locals {
         content  = base64encode(join("\n", [for k, v in local.environment : "${k}=${v}" if v != null]))
       },
       {
-        filename = "docker-compose.traefik.yaml"
-        content  = filebase64("${local.template_dir}/docker-compose.traefik.yaml")
+        filename = "docker-compose.caddy.yaml"
+        content  = filebase64("${local.template_dir}/docker-compose.caddy.yaml")
       },
     ],
 

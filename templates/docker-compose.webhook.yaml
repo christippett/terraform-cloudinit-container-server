@@ -7,7 +7,7 @@ services:
     container_name: webhook
     command:
       - "-verbose"
-      - "-port=${TRAEFIK_OPS_PORT-9000}"
+      - "-port=${CADDY_OPS_PORT-9000}"
       - "-hooks=/app/.webhook/hooks.json"
       - "-urlprefix=${WEBHOOK_URL_PREFIX:-hooks}"
       - "-http-methods=${WEBHOOK_HTTP_METHOD:-PATCH}"
@@ -15,11 +15,11 @@ services:
     volumes:
       - "./:/app"
     ports:
-      - "${TRAEFIK_OPS_PORT-9000}"
+      - "${CADDY_OPS_PORT-9000}"
     labels:
-      - "traefik.http.routers.webhook.rule=Host(`${DOMAIN}`) && PathPrefix(`/${WEBHOOK_URL_PREFIX:-hooks}`)"
-      - "traefik.http.routers.webhook.entrypoints=ops"
-      - "traefik.http.routers.webhook.tls.certresolver=letsencrypt"
+      caddy: "${DOMAIN}"
+      caddy.@wh_method: method ${WEBHOOK_HTTP_METHOD}
+      caddy.reverse_proxy: "@wh_method" "/${WEBHOOK_URL_PREFIX:-hooks}" {{upstreams}}
 networks:
   default:
     external:
