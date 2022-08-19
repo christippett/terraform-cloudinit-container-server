@@ -2,7 +2,7 @@ version: "3.3"
 
 services:
   caddy:
-    # see https://github.com/lucaslorentz/caddy-docker-prox
+    # see https://github.com/lucaslorentz/caddy-docker-proxy
     restart: unless-stopped
     image: "lucaslorentz/caddy-docker-proxy:${CADDY_IMAGE_TAG:-2.7-alpine}"
     container_name: "traefik"

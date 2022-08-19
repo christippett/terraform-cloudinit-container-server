@@ -11,6 +11,8 @@ locals {
     for k, v in var.container : k => v if !contains(["image", "container_name", "command"], k)
   }
 
+  image = lookup(var.container, "image", var.image)
+
   # Define environment variables that will be written to `/var/app/.env` and
   # made available to all running services, including Docker Compose and systemd.
 
@@ -23,8 +25,8 @@ locals {
     LETSENCRYPT_SERVER         = var.letsencrypt_staging ? "https://acme-staging-v02.api.letsencrypt.org/directory" : null
     COMPOSE_DOCKER_IMAGE       = "docker/compose"
     COMPOSE_DOCKER_TAG         = "1.29.2"
-    IMAGE_NAME                 = try(split(":", var.image)[0], null)
-    IMAGE_TAG                  = try(split(":", var.image)[1], "latest")
+    IMAGE_NAME                 = try(split(":", local.image)[0], null)
+    IMAGE_TAG                  = try(split(":", local.image)[1], "latest")
     CONTAINER_NAME             = lookup(var.container, "container_name", null)
     CONTAINER_COMMAND          = lookup(var.container, "command", null)
     CONTAINER_PORT             = lookup(var.container, "port", null)
@@ -34,7 +36,7 @@ locals {
     CADDY_IMAGE_TAG            = null
     CADDY_LOG_LEVEL            = null
     CADDY_OPS_PORT             = null
-    CADDY_ADMIN_PORT             = null
+    CADDY_ADMIN_PORT           = null
     WEBHOOK_URL_PREFIX         = var.enable_webhook ? "hooks" : null
     WEBHOOK_HTTP_METHOD        = var.enable_webhook ? "PATCH" : null
   }, var.env)
@@ -147,7 +149,7 @@ data "cloudinit_config" "config" {
       files                = local.files
       docker_compose_files = local.docker_compose_files
       login                = local.login
-      image                = var.image
+      image                = local.image
     })
   }
 
